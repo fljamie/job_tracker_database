@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Tracker v2.03</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary:#0d1117; --bg-secondary:#161b22; --bg-tertiary:#21262d; --bg-card:#1c2128;
+            --border-color:#30363d; --text-primary:#f0f6fc; --text-secondary:#8b949e; --text-muted:#6e7681;
+            --accent-blue:#58a6ff; --accent-green:#3fb950; --accent-yellow:#d29922; --accent-orange:#db6d28;
+            --accent-red:#f85149; --accent-purple:#a371f7; --accent-pink:#db61a2;
+            --gradient-1:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            --shadow-lg:0 25px 50px -12px rgba(0,0,0,.5); --shadow-glow:0 0 40px rgba(88,166,255,.15);
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6;}
+
+        /* ── DB SELECTOR ── */
+        #db-selector-screen{position:fixed;inset:0;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:2rem;}
+        .selector-logo{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:.5rem;}
+        .selector-sub{color:var(--text-secondary);margin-bottom:3rem;font-size:.95rem;}
+        .selector-cards{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:2rem;}
+        .selector-card{background:var(--bg-card);border:2px solid var(--border-color);border-radius:16px;padding:2rem;width:280px;cursor:pointer;transition:all .2s;text-align:center;}
+        .selector-card:hover,.selector-card.selected{border-color:var(--accent-blue);transform:translateY(-4px);box-shadow:var(--shadow-glow);background:rgba(88,166,255,.08);}
+        .selector-card-icon{font-size:3rem;margin-bottom:1rem;}
+        .selector-card h3{font-size:1.25rem;margin-bottom:.5rem;}
+        .selector-card p{font-size:.85rem;color:var(--text-secondary);}
+        .selector-badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.7rem;font-weight:700;margin-top:.75rem;text-transform:uppercase;letter-spacing:.05em;}
+        .badge-mysql{background:rgba(63,185,80,.15);color:var(--accent-green);}
+        .badge-sqlite{background:rgba(88,166,255,.15);color:var(--accent-blue);}
+        .selector-form{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;width:100%;max-width:560px;margin-top:1rem;display:none;}
+        .selector-form.visible{display:block;}
+        .selector-form h4{margin-bottom:1rem;color:var(--accent-blue);}
+        .selector-form-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;}
+        .selector-msg{padding:.75rem 1rem;border-radius:8px;font-size:.875rem;margin-bottom:1rem;display:none;}
+
+        /* ── HEADER ── */
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:1rem 2rem;position:sticky;top:0;z-index:100;}
+        .header-content{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;}
+        .header-left{flex:1;display:flex;gap:.75rem;align-items:center;}
+        .logo{font-family:'Calibri','Segoe UI',sans-serif;font-size:1.75rem;font-weight:300;color:rgba(255,255,255,.7);letter-spacing:.02em;}
+        .header-actions{flex:1;display:flex;gap:.75rem;justify-content:flex-end;align-items:center;}
+        .db-mode-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:20px;font-size:.75rem;font-weight:600;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+        .db-mode-badge.mysql{background:rgba(63,185,80,.15);color:var(--accent-green);border:1px solid rgba(63,185,80,.3);}
+        .db-mode-badge.sqlite,.db-mode-badge.local{background:rgba(88,166,255,.15);color:var(--accent-blue);border:1px solid rgba(88,166,255,.3);}
+
+        /* ── BUTTONS ── */
+        .btn{padding:.625rem 1.25rem;border-radius:8px;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:.5rem;}
+        .btn-primary{background:var(--gradient-1);color:white;}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:var(--shadow-glow);}
+        .btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);}
+        .btn-secondary:hover{background:var(--bg-card);border-color:var(--accent-blue);}
+        .btn-danger{background:rgba(248,81,73,.15);color:var(--accent-red);border:1px solid rgba(248,81,73,.3);}
+        .btn-danger:hover{background:rgba(248,81,73,.25);}
+        .btn-icon{padding:.625rem;border-radius:8px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-color);cursor:pointer;transition:all .2s;}
+        .btn-icon:hover{color:var(--accent-blue);border-color:var(--accent-blue);}
+        .btn-ai{background:linear-gradient(135deg,#a371f7,#58a6ff);color:white;}
+        .btn-ai:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(163,113,247,.3);}
+        .btn-chatgpt{background:linear-gradient(135deg,#10a37f,#1a7f5a);color:white;}
+        .btn-chatgpt:hover{transform:translateY(-2px);}
+
+        /* ── MAIN ── */
+        .main-content{max-width:1400px;margin:0 auto;padding:2rem;}
+
+        /* ── STATS ── */
+        .stats-bar{display:flex;flex-wrap:nowrap;justify-content:center;gap:.5rem;margin-bottom:1.5rem;overflow-x:auto;padding-bottom:.25rem;}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:.75rem 1rem;text-align:center;transition:all .2s;flex:1;min-width:100px;max-width:140px;}
+        .stat-card:hover{border-color:var(--accent-blue);transform:translateY(-2px);}
+        .stat-card.stat-clickable{cursor:pointer;}
+        .stat-card.stat-clickable.active{border-color:var(--accent-blue);background:rgba(88,166,255,.1);box-shadow:0 0 15px rgba(88,166,255,.2);}
+        .stat-value{font-size:1.5rem;font-weight:700;margin-bottom:.1rem;}
+        .stat-label{font-size:.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.03em;}
+        .stat-submitted{color:var(--accent-blue);} .stat-progress{color:var(--accent-yellow);}
+        .stat-interviewing{color:var(--accent-green);} .stat-rejected{color:var(--accent-red);} .stat-closed{color:var(--text-muted);}
+
+        /* ── TABLE ── */
+        .jobs-table-container{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden;}
+        .jobs-table{width:100%;border-collapse:collapse;}
+        .jobs-table thead{background:var(--bg-tertiary);}
+        .jobs-table th{padding:.75rem 1rem;text-align:left;font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border-color);}
+        .jobs-table th.sortable{cursor:pointer;user-select:none;}
+        .jobs-table th.sortable:hover{color:var(--accent-blue);}
+        .job-row{cursor:pointer;transition:background .15s;}
+        .job-row:hover{background:var(--bg-tertiary);}
+        .job-row td{padding:.75rem 1rem;border-bottom:1px solid var(--border-color);font-size:.875rem;}
+        .job-row:last-child td{border-bottom:none;}
+        .job-company-cell{color:var(--accent-blue);font-weight:500;}
+        .job-title-cell{font-weight:500;}
+        .job-date-cell{color:var(--text-secondary);font-size:.8rem;}
+        .job-contacts-cell{text-align:center;color:var(--text-secondary);}
+        .status-badge{padding:.25rem .6rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+        .status-submitted{background:rgba(88,166,255,.15);color:var(--accent-blue);}
+        .status-in-progress{background:rgba(210,153,34,.15);color:var(--accent-yellow);}
+        .status-interviewing{background:rgba(63,185,80,.15);color:var(--accent-green);}
+        .status-rejected{background:rgba(248,81,73,.15);color:var(--accent-red);}
+        .status-closed{background:rgba(110,118,129,.15);color:var(--text-muted);}
+
+        /* ── MODAL ── */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all .3s;padding:2rem;}
+        .modal-overlay.active{opacity:1;visibility:visible;}
+        .modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;width:100%;max-width:800px;max-height:90vh;overflow-y:auto;transform:scale(.9) translateY(20px);transition:all .3s;}
+        .modal-overlay.active .modal{transform:scale(1) translateY(0);}
+        .modal-header{padding:1.5rem;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg-secondary);z-index:10;}
+        .modal-title{font-family:'Playfair Display',serif;font-size:1.5rem;}
+        .modal-close{width:36px;height:36px;border-radius:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+        .modal-close:hover{color:var(--accent-red);border-color:var(--accent-red);}
+        .modal-body{padding:1.5rem;}
+        .modal-footer{padding:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:.75rem;position:sticky;bottom:0;background:var(--bg-secondary);}
+
+        /* ── FORMS ── */
+        .form-group{margin-bottom:1.25rem;}
+        .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;}
+        .form-label{display:block;font-size:.875rem;font-weight:500;color:var(--text-secondary);margin-bottom:.5rem;}
+        .form-input,.form-select,.form-textarea{width:100%;padding:.75rem 1rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.9375rem;font-family:inherit;transition:all .2s;}
+        .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent-blue);box-shadow:0 0 0 3px rgba(88,166,255,.1);}
+        .form-textarea{resize:vertical;min-height:100px;}
+        .form-select{cursor:pointer;}
+        .pw-wrap{position:relative;display:flex;align-items:center;}
+        .pw-wrap .form-input{padding-right:40px;}
+        .pw-toggle{position:absolute;right:8px;background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:6px;display:flex;align-items:center;transition:color .2s;}
+        .pw-toggle:hover{color:var(--accent-blue);}
+        .pw-toggle svg{width:18px;height:18px;}
+
+        /* ── FILE UPLOAD ── */
+        .file-upload-area{border:2px dashed var(--border-color);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg-tertiary);}
+        .file-upload-area:hover,.file-upload-area.dragover{border-color:var(--accent-blue);background:rgba(88,166,255,.05);}
+        .file-upload-icon{font-size:2.5rem;margin-bottom:.75rem;}
+        .file-upload-text{color:var(--text-secondary);font-size:.9375rem;}
+        .file-upload-text span{color:var(--accent-blue);font-weight:600;}
+        .uploaded-files{margin-top:1rem;display:flex;flex-wrap:wrap;gap:.5rem;}
+        .uploaded-file{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;font-size:.8rem;}
+        .uploaded-file-remove{color:var(--accent-red);cursor:pointer;font-weight:bold;margin-left:.25rem;}
+
+        /* ── CONTACTS ── */
+        .contacts-section{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border-color);}
+        .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+        .section-title{font-size:1rem;font-weight:600;}
+        .contact-card{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:1rem;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:flex-start;}
+        .contact-info{flex:1;min-width:0;}
+        .contact-info h4{font-size:.9375rem;font-weight:600;margin-bottom:.25rem;}
+        .contact-info p{font-size:.8rem;color:var(--text-secondary);}
+        .contact-role{padding:.25rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600;background:rgba(163,113,247,.15);color:var(--accent-purple);flex-shrink:0;}
+        .contact-actions{display:flex;gap:.5rem;flex-shrink:0;}
+        .contact-actions button{padding:.375rem .625rem;font-size:.75rem;}
+
+        /* ── CONFIG SECTIONS ── */
+        .config-section{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;margin-bottom:1rem;}
+        .config-section h3{font-size:1rem;margin-bottom:1rem;color:var(--accent-blue);}
+        .connection-status{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-radius:8px;font-size:.875rem;margin-bottom:1rem;}
+        .connection-status.connected{background:rgba(63,185,80,.1);color:var(--accent-green);border:1px solid rgba(63,185,80,.3);}
+        .connection-status.disconnected{background:rgba(248,81,73,.1);color:var(--accent-red);border:1px solid rgba(248,81,73,.3);}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:currentColor;}
+
+        /* ── API KEY SECTION ── */
+        .apikey-section{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;margin-bottom:1rem;}
+        .apikey-section h3{font-size:1rem;margin-bottom:.75rem;color:var(--accent-purple);}
+        .apikey-status{display:flex;align-items:center;gap:.5rem;font-size:.8rem;margin-top:.5rem;}
+        .apikey-status.has-key{color:var(--accent-green);}
+        .apikey-status.no-key{color:var(--text-muted);}
+
+        /* ── MIGRATION ── */
+        .migration-step{display:flex;align-items:center;gap:.75rem;padding:.5rem 0;font-size:.875rem;}
+        .migration-step.done{color:var(--accent-green);} .migration-step.active{color:var(--accent-blue);} .migration-step.pending{color:var(--text-muted);} .migration-step.error{color:var(--accent-red);}
+
+        /* ── AI ── */
+        .ai-loading{text-align:center;padding:2rem;}
+        .ai-spinner{width:48px;height:48px;border:3px solid var(--border-color);border-top-color:var(--accent-purple);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1.5rem;}
+        .ai-steps{list-style:none;text-align:left;max-width:360px;margin:1rem auto 0;}
+        .ai-step{display:flex;align-items:center;gap:.75rem;padding:.5rem 0;font-size:.9rem;color:var(--text-secondary);}
+        .ai-step.done{color:var(--accent-green);} .ai-step.active{color:var(--accent-purple);font-weight:600;}
+        .ai-result-section{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;margin-bottom:1rem;}
+        .ai-result-section h3{color:var(--accent-purple);margin-bottom:.75rem;font-size:1rem;}
+        .ai-result-section p,.ai-result-section li{font-size:.875rem;color:var(--text-secondary);margin-bottom:.4rem;line-height:1.6;}
+        .ai-result-section ul{padding-left:1.25rem;}
+        .ai-contact-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:1rem;margin-bottom:.75rem;}
+        .ai-contact-card h4{color:var(--text-primary);margin-bottom:.5rem;}
+        .ai-tag{display:inline-block;padding:.2rem .5rem;border-radius:4px;font-size:.7rem;font-weight:600;background:rgba(163,113,247,.15);color:var(--accent-purple);margin-bottom:.5rem;}
+
+        /* ── INTERVIEW ROUNDS ── */
+        .interview-round-indicator{display:flex;gap:.5rem;flex-wrap:wrap;}
+        .round-step{flex:1;min-width:100px;padding:.625rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;text-align:center;font-size:.75rem;color:var(--text-secondary);transition:all .2s;}
+        .round-step.active{background:rgba(88,166,255,.15);border-color:var(--accent-blue);color:var(--accent-blue);}
+        .round-step.completed{background:rgba(63,185,80,.15);border-color:var(--accent-green);color:var(--accent-green);}
+
+        /* ── EMPTY ── */
+        .empty-state{text-align:center;padding:4rem 2rem;color:var(--text-secondary);}
+        .empty-state-icon{font-size:4rem;margin-bottom:1rem;opacity:.5;}
+        .empty-state h3{font-size:1.25rem;color:var(--text-primary);margin-bottom:.5rem;}
+
+        /* ── TOASTS ── */
+        .toast-container{position:fixed;bottom:2rem;right:2rem;z-index:2000;display:flex;flex-direction:column;gap:.75rem;}
+        .toast{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.5rem;display:flex;align-items:center;gap:.75rem;box-shadow:var(--shadow-lg);animation:slideIn .3s ease;}
+        .toast.success{border-left:3px solid var(--accent-green);}
+        .toast.error{border-left:3px solid var(--accent-red);}
+        .toast.info{border-left:3px solid var(--accent-blue);}
+
+        /* ── ANIMATIONS ── */
+        @keyframes spin{to{transform:rotate(360deg);}}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+        ::-webkit-scrollbar{width:8px;height:8px;}
+        ::-webkit-scrollbar-track{background:var(--bg-primary);}
+        ::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px;}
+        ::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+
+        @media(max-width:768px){.header-content{flex-direction:column;gap:1rem;}.modal{max-height:95vh;}.selector-cards{flex-direction:column;align-items:center;}}
+    </style>
+</head>
+<body>
+
+<!-- ══════════════ DB SELECTOR ══════════════ -->
+<div id="db-selector-screen">
+    <div class="selector-logo">Job Application Tracker</div>
+    <div class="selector-sub">v2.03 — Choose your database mode to get started</div>
+    <div class="selector-cards">
+        <div class="selector-card" id="card-mysql" onclick="selectMode('mysql')">
+            <div class="selector-card-icon">🗄️</div>
+            <h3>MySQL</h3>
+            <p>Connect to an existing MySQL server. Best for shared or team use.</p>
+            <div class="selector-badge badge-mysql">Shared / Team</div>
+        </div>
+        <div class="selector-card" id="card-local" onclick="selectMode('local')">
+            <div class="selector-card-icon">📦</div>
+            <h3>Local File</h3>
+            <p>Self-contained JSON file — no server required. Simple and portable.</p>
+            <div class="selector-badge badge-sqlite">Portable / Offline</div>
+        </div>
+    </div>
+    <div class="selector-form" id="mysql-form">
+        <h4>🗄️ MySQL Connection</h4>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="sel-db-host" value="localhost"></div>
+            <div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="sel-db-port" value="3306"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Database Name</label><input type="text" class="form-input" id="sel-db-name" value="job_tracker"></div>
+            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="sel-db-user" value="root"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Password</label>
+            <div class="pw-wrap"><input type="password" class="form-input" id="sel-db-pass"><button type="button" class="pw-toggle" onclick="togglePw('sel-db-pass',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+        </div>
+        <div class="selector-msg" id="sel-msg"></div>
+        <div class="selector-form-actions">
+            <button class="btn btn-secondary" onclick="testSelectorConn()">Test Connection</button>
+            <button class="btn btn-primary" onclick="connectAndLaunch()">Connect &amp; Launch →</button>
+        </div>
+    </div>
+    <div class="selector-form" id="sqlite-form">
+        <h4>📦 Local Database</h4>
+        <div class="form-group"><label class="form-label">Database File</label>
+            <input type="text" class="form-input" id="sel-sqlite-file" value="jobtracker.db" placeholder="filename.db">
+            <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Stored in the <code>data/</code> folder next to this app</p>
+        </div>
+        <div class="selector-msg" id="sel-sqlite-msg"></div>
+        <div class="selector-form-actions">
+            <button class="btn btn-primary" onclick="connectAndLaunch()">Launch →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app" style="display:none;">
+<header class="header">
+    <div class="header-content">
+        <div class="header-left">
+            <button class="btn btn-secondary" onclick="openStatisticsModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Statistics
+            </button>
+            <button class="btn btn-secondary" onclick="openMigrationModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Migrate Data
+            </button>
+        </div>
+        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.03</span></div>
+        <div class="header-actions">
+            <div id="db-mode-indicator" class="db-mode-badge local" onclick="openConfigModal()" title="Database settings">
+                <span id="db-mode-dot">●</span>
+                <span id="db-mode-text">Local</span>
+            </div>
+            <button class="btn btn-secondary" onclick="openResumeModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                My Resume
+            </button>
+            <button class="btn btn-primary" onclick="openJobModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Application
+            </button>
+            <button class="btn-icon" onclick="openConfigModal()" title="Settings">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9z"/></svg>
+            </button>
+            <button class="btn-icon" onclick="shutdownServer()" title="Shutdown Server" style="color:var(--accent-red);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="stats-bar">
+        <div class="stat-card stat-clickable active" onclick="filterByStatus('all')" id="filter-all"><div class="stat-value" style="color:var(--accent-blue);" id="stat-all">0</div><div class="stat-label">All</div></div>
+        <div class="stat-card stat-clickable" onclick="filterByStatus('Submitted')" id="filter-submitted"><div class="stat-value stat-submitted" id="stat-submitted">0</div><div class="stat-label">Submitted</div></div>
+        <div class="stat-card stat-clickable" onclick="filterByStatus('In Progress')" id="filter-in-progress"><div class="stat-value stat-progress" id="stat-progress">0</div><div class="stat-label">In Progress</div></div>
+        <div class="stat-card stat-clickable" onclick="filterByStatus('Interviewing')" id="filter-interviewing"><div class="stat-value stat-interviewing" id="stat-interviewing">0</div><div class="stat-label">Interviewing</div></div>
+        <div class="stat-card stat-clickable" onclick="filterByStatus('Rejected')" id="filter-rejected"><div class="stat-value stat-rejected" id="stat-rejected">0</div><div class="stat-label">Rejected</div></div>
+        <div class="stat-card stat-clickable" onclick="filterByStatus('Closed')" id="filter-closed"><div class="stat-value stat-closed" id="stat-closed">0</div><div class="stat-label">Closed</div></div>
+        <div class="stat-card" style="cursor:pointer;" onclick="openAllContactsModal()"><div class="stat-value" style="color:var(--accent-purple);" id="stat-contacts">0</div><div class="stat-label">Contacts</div></div>
+    </div>
+    <div id="applications-container">
+        <div class="empty-state"><div class="empty-state-icon">📋</div><h3>No Applications Yet</h3><p>Click "New Application" to start tracking</p></div>
+    </div>
+</main>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Add / Edit Job -->
+<div class="modal-overlay" id="job-modal">
+<div class="modal">
+    <div class="modal-header"><h2 class="modal-title" id="job-modal-title">New Job Application</h2><button class="modal-close" onclick="closeJobModal()">✕</button></div>
+    <div class="modal-body">
+        <input type="hidden" id="job-id">
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Company Name *</label><input type="text" class="form-input" id="company-name" required></div>
+            <div class="form-group"><label class="form-label">Job Title *</label><input type="text" class="form-input" id="job-title" required></div>
+        </div>
+        <div class="form-group"><label class="form-label">Job URL</label><input type="url" class="form-input" id="job-url" placeholder="https://..." onchange="extractCompanyWebsite()"></div>
+        <div class="form-group"><label class="form-label">Company Website</label><input type="url" class="form-input" id="company-website" placeholder="https://company.com"><p style="font-size:.75rem;color:var(--text-secondary);margin-top:.25rem;">Auto-filled from Job URL if possible</p></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Status</label>
+                <select class="form-select" id="app-status">
+                    <option>Submitted</option><option>In Progress</option><option>Interviewing</option><option>Rejected</option><option>Closed</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Interview Round</label>
+                <select class="form-select" id="interview-round">
+                    <option value="">Not Started</option><option>HR Screen</option><option>Managers</option><option>Peers</option><option>Presentation/Demo</option><option>Executive Team</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Application Date</label><input type="date" class="form-input" id="application-date"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Documents (up to 10)</label>
+            <div class="file-upload-area" id="doc-upload-area"><div class="file-upload-icon">📎</div><div class="file-upload-text">Drag &amp; drop or <span>browse</span></div><input type="file" id="doc-upload" multiple hidden></div>
+            <div class="uploaded-files" id="uploaded-docs"></div>
+        </div>
+        <div class="contacts-section">
+            <div class="section-header"><h3 class="section-title">Contacts</h3><button type="button" class="btn btn-secondary" onclick="openContactModal()">+ Add Contact</button></div>
+            <div id="contacts-list"></div>
+        </div>
+        <div class="contacts-section">
+            <div class="section-header"><h3 class="section-title">Communication Log</h3><button type="button" class="btn btn-secondary" onclick="openCommunicationModal()">+ Add Entry</button></div>
+            <div id="communications-list"></div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeJobModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveJob()">Save Application</button>
+    </div>
+</div>
+</div>
+
+<!-- View Job -->
+<div class="modal-overlay" id="view-job-modal">
+<div class="modal">
+    <div class="modal-header"><h2 class="modal-title" id="view-job-title">Job Details</h2><button class="modal-close" onclick="closeViewJobModal()">✕</button></div>
+    <div class="modal-body" id="view-job-body"></div>
+    <div class="modal-footer">
+        <button class="btn btn-danger" onclick="deleteCurrentJob()" style="margin-right:auto;">🗑 Delete</button>
+        <button class="btn btn-secondary" onclick="closeViewJobModal()">Close</button>
+        <button class="btn btn-secondary" onclick="editCurrentJob()">✏️ Edit</button>
+        <button class="btn btn-ai" onclick="openAIPrep()">🤖 AI Interview Prep</button>
+    </div>
+</div>
+</div>
+
+<!-- AI Prep -->
+<div class="modal-overlay" id="ai-modal">
+<div class="modal" style="max-width:900px;">
+    <div class="modal-header"><h2 class="modal-title">🤖 AI Interview Prep</h2><button class="modal-close" onclick="closeAIModal()">✕</button></div>
+    <div class="modal-body" id="ai-modal-body"></div>
+    <div class="modal-footer" id="ai-modal-footer" style="display:none;">
+        <button class="btn btn-secondary" onclick="copyAIResults()">📋 Copy Text</button>
+        <button class="btn btn-secondary" onclick="saveAIResultsToJob()" id="ai-save-btn" style="display:none;">💾 Save to Job Record</button>
+        <button class="btn btn-secondary" onclick="closeAIModal()">Close</button>
+    </div>
+</div>
+</div>
+
+<!-- Contact -->
+<div class="modal-overlay" id="contact-modal">
+<div class="modal" style="max-width:500px;">
+    <div class="modal-header"><h2 class="modal-title" id="contact-modal-title">Add Contact</h2><button class="modal-close" onclick="closeContactModal()">✕</button></div>
+    <div class="modal-body">
+        <div class="form-group"><label class="form-label">Contact Name *</label><input type="text" class="form-input" id="contact-name"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="contact-title"></div>
+            <div class="form-group"><label class="form-label">Role</label>
+                <select class="form-select" id="contact-role">
+                    <option>Recruiter</option><option>HR</option><option>Hiring Manager</option><option>Executive</option><option>Product Specialist</option><option>Individual Contributor</option><option>Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">LinkedIn URL</label><input type="url" class="form-input" id="contact-linkedin" placeholder="https://linkedin.com/in/..."></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="contact-email"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="contact-phone"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="contact-notes" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeContactModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+    </div>
+</div>
+</div>
+
+<!-- Communication -->
+<div class="modal-overlay" id="communication-modal">
+<div class="modal" style="max-width:600px;">
+    <div class="modal-header"><h2 class="modal-title" id="comm-modal-title">Add Communication</h2><button class="modal-close" onclick="closeCommunicationModal()">✕</button></div>
+    <div class="modal-body">
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Type *</label>
+                <select class="form-select" id="comm-type">
+                    <option>Email</option><option>Phone Call</option><option>Video Call</option><option>In-Person Meeting</option><option>LinkedIn Message</option><option>Other</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Date *</label><input type="datetime-local" class="form-input" id="comm-date"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Subject *</label><input type="text" class="form-input" id="comm-subject" placeholder="Brief description"></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="comm-notes" rows="8" placeholder="Paste email content, call notes..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCommunicationModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCommunication()">Save</button>
+    </div>
+</div>
+</div>
+
+<!-- Database / Settings Config -->
+<div class="modal-overlay" id="config-modal">
+<div class="modal" style="max-width:580px;">
+    <div class="modal-header"><h2 class="modal-title">⚙️ Settings</h2><button class="modal-close" onclick="closeConfigModal()">✕</button></div>
+    <div class="modal-body">
+        <!-- Connection Status -->
+        <div id="config-conn-status" class="connection-status connected"><span class="status-dot"></span><span id="config-conn-text">Connected</span></div>
+
+        <!-- Database Mode -->
+        <div class="config-section">
+            <h3>Database</h3>
+            <div style="display:flex;gap:.75rem;margin-bottom:1rem;">
+                <button class="btn btn-secondary" id="cfg-mysql-btn" onclick="switchCfgMode('mysql')" style="flex:1;">🗄️ MySQL</button>
+                <button class="btn btn-secondary" id="cfg-sqlite-btn" onclick="switchCfgMode('local')" style="flex:1;">📦 Local File</button>
+            </div>
+            <div id="cfg-mysql-fields">
+                <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="cfg-host" value="localhost"></div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="cfg-port" value="3306"></div>
+                    <div class="form-group"><label class="form-label">Database</label><input type="text" class="form-input" id="cfg-dbname" value="job_tracker"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="cfg-user" value="root"></div>
+                    <div class="form-group"><label class="form-label">Password</label>
+                        <div class="pw-wrap"><input type="password" class="form-input" id="cfg-pass"><button type="button" class="pw-toggle" onclick="togglePw('cfg-pass',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+                    </div>
+                </div>
+            </div>
+            <div id="cfg-sqlite-fields" style="display:none;">
+                <div class="form-group"><label class="form-label">Filename</label><input type="text" class="form-input" id="cfg-sqlite-file" value="jobtracker.db"><p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Stored in data/ folder next to the app</p></div>
+            </div>
+        </div>
+
+        <!-- AI API Key -->
+        <div class="apikey-section">
+            <h3>🤖 AI Interview Prep (Anthropic)</h3>
+            <div class="form-group" style="margin-bottom:.5rem;">
+                <label class="form-label">API Key</label>
+                <div style="display:flex;gap:.5rem;align-items:center;">
+                    <div class="pw-wrap" style="flex:1;"><input type="password" class="form-input" id="cfg-api-key" placeholder="sk-ant-..."><button type="button" class="pw-toggle" onclick="togglePw('cfg-api-key',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+                    <button class="btn btn-danger" onclick="clearApiKey()" style="white-space:nowrap;flex-shrink:0;">🗑 Clear</button>
+                </div>
+            </div>
+            <div class="apikey-status" id="apikey-status-indicator"></div>
+            <div style="margin-top:.75rem;display:flex;gap:.5rem;align-items:center;">
+                <button class="btn btn-secondary" onclick="testApiKey()" id="api-test-btn" style="font-size:.8rem;padding:.4rem .9rem;">🔌 Test API Key</button>
+                <span id="api-test-result" style="font-size:.8rem;"></span>
+            </div>
+            <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.5rem;">Key is stored in your browser only. Get one at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent-purple);">console.anthropic.com</a></p>
+        </div>
+
+        <!-- Reset / New User -->
+        <div class="config-section" style="border-color:rgba(248,81,73,.3);">
+            <h3 style="color:var(--accent-red);">🔄 Reset Connection (Test as New User)</h3>
+            <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1rem;">Clears saved connection settings so you can test the first-time setup experience. Your database data is kept safe — only the saved login is removed.</p>
+            <button class="btn btn-danger" onclick="resetConnection()">Reset Saved Connection</button>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="testCfgConn()">Test Connection</button>
+        <button class="btn btn-primary" onclick="saveCfgAndReload()">Save &amp; Reconnect</button>
+    </div>
+</div>
+</div>
+
+<!-- Resume -->
+<div class="modal-overlay" id="resume-modal">
+<div class="modal" style="max-width:500px;">
+    <div class="modal-header"><h2 class="modal-title">My Resume</h2><button class="modal-close" onclick="closeResumeModal()">✕</button></div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">Upload Your Resume</label>
+            <div class="file-upload-area" id="resume-upload-area"><div class="file-upload-icon">📄</div><div class="file-upload-text">Drag &amp; drop or <span>browse</span></div><input type="file" id="resume-upload" hidden accept=".pdf,.doc,.docx,.txt"></div>
+            <div class="uploaded-files" id="current-resume-display"></div>
+        </div>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:1rem;">Your resume helps the AI personalize interview coaching.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeResumeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveResume()">Save Resume</button>
+    </div>
+</div>
+</div>
+
+<!-- All Contacts -->
+<div class="modal-overlay" id="all-contacts-modal">
+<div class="modal" style="max-width:900px;">
+    <div class="modal-header"><h2 class="modal-title">All Contacts</h2><button class="modal-close" onclick="closeAllContactsModal()">✕</button></div>
+    <div class="modal-body" id="all-contacts-body"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeAllContactsModal()">Close</button></div>
+</div>
+</div>
+
+<!-- Migration -->
+<div class="modal-overlay" id="migration-modal">
+<div class="modal" style="max-width:700px;">
+    <div class="modal-header"><h2 class="modal-title">🔄 Migrate Data</h2><button class="modal-close" onclick="closeMigrationModal()">✕</button></div>
+    <div class="modal-body">
+        <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-size:.9rem;">Export from one database and import into another. Your current connection is pre-filled as the source.</p>
+
+        <div class="config-section">
+            <h3>Source — Export From</h3>
+            <div style="display:flex;gap:.75rem;margin-bottom:1rem;">
+                <button class="btn btn-secondary" id="mig-src-mysql-btn" onclick="setMigMode('src','mysql')" style="flex:1;">🗄️ MySQL</button>
+                <button class="btn btn-secondary" id="mig-src-sqlite-btn" onclick="setMigMode('src','local')" style="flex:1;">📦 Local File</button>
+            </div>
+            <div id="mig-src-mysql-fields" style="display:none;">
+                <div class="form-row"><div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="mig-src-host" value="localhost"></div><div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="mig-src-port" value="3306"></div></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Database</label><input type="text" class="form-input" id="mig-src-db" value="job_tracker"></div><div class="form-group"><label class="form-label">User</label><input type="text" class="form-input" id="mig-src-user" value="root"></div></div>
+                <div class="form-group"><label class="form-label">Password</label><div class="pw-wrap"><input type="password" class="form-input" id="mig-src-pass"><button type="button" class="pw-toggle" onclick="togglePw('mig-src-pass',this)"><?= pwIcon() ?></button></div></div>
+            </div>
+            <div id="mig-src-sqlite-fields" style="display:none;">
+                <div class="form-group"><label class="form-label">Local File</label><input type="text" class="form-input" id="mig-src-sqlite" value="jobtracker.db"></div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h3>Destination — Import Into</h3>
+            <div style="display:flex;gap:.75rem;margin-bottom:1rem;">
+                <button class="btn btn-secondary" id="mig-dst-mysql-btn" onclick="setMigMode('dst','mysql')" style="flex:1;">🗄️ MySQL</button>
+                <button class="btn btn-secondary" id="mig-dst-sqlite-btn" onclick="setMigMode('dst','local')" style="flex:1;">📦 Local File</button>
+            </div>
+            <div id="mig-dst-mysql-fields" style="display:none;">
+                <div class="form-row"><div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="mig-dst-host" value="localhost"></div><div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="mig-dst-port" value="3306"></div></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Database</label><input type="text" class="form-input" id="mig-dst-db" value="job_tracker"></div><div class="form-group"><label class="form-label">User</label><input type="text" class="form-input" id="mig-dst-user" value="root"></div></div>
+                <div class="form-group"><label class="form-label">Password</label><div class="pw-wrap"><input type="password" class="form-input" id="mig-dst-pass"><button type="button" class="pw-toggle" onclick="togglePw('mig-dst-pass',this)"><?= pwIcon() ?></button></div></div>
+            </div>
+            <div id="mig-dst-sqlite-fields" style="display:none;">
+                <div class="form-group"><label class="form-label">Local File</label><input type="text" class="form-input" id="mig-dst-sqlite" value="jobtracker_new.db"></div>
+            </div>
+        </div>
+
+        <div id="mig-progress-area" style="display:none;">
+            <div style="background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;">
+                <div class="migration-step pending" id="mig-s1"><span>⬜</span> Connecting to source...</div>
+                <div class="migration-step pending" id="mig-s2"><span>⬜</span> Exporting data...</div>
+                <div class="migration-step pending" id="mig-s3"><span>⬜</span> Connecting to destination...</div>
+                <div class="migration-step pending" id="mig-s4"><span>⬜</span> Importing records...</div>
+                <div class="migration-step pending" id="mig-s5"><span>⬜</span> Complete</div>
+            </div>
+            <div id="mig-result" style="display:none;margin-top:1rem;padding:1rem;border-radius:8px;font-size:.875rem;"></div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeMigrationModal()">Close</button>
+        <button class="btn btn-primary" id="mig-run-btn" onclick="runMigration()">Start Migration →</button>
+    </div>
+</div>
+</div>
+
+<!-- Statistics -->
+<div class="modal-overlay" id="statistics-modal">
+<div class="modal" style="max-width:1000px;">
+    <div class="modal-header"><h2 class="modal-title">Application Statistics</h2><button class="modal-close" onclick="closeStatisticsModal()">✕</button></div>
+    <div class="modal-body">
+        <div class="config-section" style="margin-bottom:1.5rem;">
+            <h3 style="margin-bottom:1rem;font-size:1rem;">Filters</h3>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Preset</label><select class="form-select" id="stats-preset" onchange="applyDatePreset()"><option value="all">All Time</option><option value="thisMonth">This Month</option><option value="lastMonth">Last Month</option><option value="thisYear">This Year</option></select></div>
+                <div class="form-group"><label class="form-label">From</label><input type="date" class="form-input" id="stats-from"></div>
+                <div class="form-group"><label class="form-label">To</label><input type="date" class="form-input" id="stats-to"></div>
+                <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="stats-status"><option value="all">All</option><option>Submitted</option><option>In Progress</option><option>Interviewing</option><option>Rejected</option><option>Closed</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="applyStatsFilters()" style="margin-top:.5rem;">Apply</button>
+        </div>
+        <div class="config-section" style="margin-bottom:1.5rem;"><h3 style="margin-bottom:1rem;font-size:1rem;">Summary</h3><div class="stats-bar" id="stats-summary" style="margin-bottom:0;"></div></div>
+        <div class="config-section">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;"><h3 style="font-size:1rem;">Applications (<span id="stats-count">0</span>)</h3><button class="btn btn-secondary" onclick="downloadStatsPDF()">⬇ Download PDF</button></div>
+            <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:var(--bg-tertiary);"><th style="padding:.75rem;text-align:left;border-bottom:1px solid var(--border-color);">Company</th><th style="padding:.75rem;text-align:left;border-bottom:1px solid var(--border-color);">Title</th><th style="padding:.75rem;text-align:left;border-bottom:1px solid var(--border-color);">Date</th><th style="padding:.75rem;text-align:left;border-bottom:1px solid var(--border-color);">Status</th></tr></thead><tbody id="stats-tbody"></tbody></table></div>
+        </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeStatisticsModal()">Close</button></div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  GLOBAL STATE
+// ══════════════════════════════════════════
+let jobs = [], currentContacts = [], currentDocuments = [], currentCommunications = [];
+let currentJobId = null, currentResume = null, dbConfig = null;
+let editContactIdx = -1, editCommIdx = -1;
+let currentFilter = 'all';
+let currentSort  = { column:'date', direction:'desc' };
+let selectedMode = null;
+let migSrcMode = null, migDstMode = null;
+let _aiResultText = '', _aiResultHTML = '';
+let _cfgMode = 'local';
+
+const API_BASE = 'api.php';
+const CONFIG_KEY = 'jobTrackerConfig_v2';
+const APIKEY_KEY = 'anthropic_api_key';
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    if (saved) {
+        dbConfig = JSON.parse(saved);
+        hideSelectorAndLaunch();
+    }
+    setupFileUploads();
+});
+
+// ══════════════════════════════════════════
+//  API CALL
+// ══════════════════════════════════════════
+async function apiCall(action, data = {}) {
+    try {
+        const r = await fetch(API_BASE, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ action, ...data })
+        });
+        const text = await r.text();
+        try { return JSON.parse(text); }
+        catch(e) { return { success:false, error:'Server returned non-JSON: ' + text.substring(0,200) }; }
+    } catch(e) { return { success:false, error: e.message }; }
+}
+
+// ══════════════════════════════════════════
+//  DB SELECTOR
+// ══════════════════════════════════════════
+function selectMode(mode) {
+    selectedMode = mode;
+    document.getElementById('card-mysql').classList.toggle('selected', mode==='mysql');
+    document.getElementById('card-local').classList.toggle('selected', mode==='local');
+    document.getElementById('mysql-form').classList.toggle('visible', mode==='mysql');
+    document.getElementById('sqlite-form').classList.toggle('visible', mode==='local');
+}
+
+function buildSelConfig() {
+    if (selectedMode === 'mysql') return {
+        mode:'mysql', host:document.getElementById('sel-db-host').value,
+        port:parseInt(document.getElementById('sel-db-port').value),
+        database:document.getElementById('sel-db-name').value,
+        user:document.getElementById('sel-db-user').value,
+        password:document.getElementById('sel-db-pass').value
+    };
+    return { mode:'local', filename: document.getElementById('sel-sqlite-file').value || 'jobtracker.db' };
+}
+
+async function testSelectorConn() {
+    const cfg = buildSelConfig();
+    const el = document.getElementById('sel-msg');
+    showSelMsg(el, 'Testing...', 'info');
+    const r = await apiCall('testMysqlConnection', { config:cfg });
+    showSelMsg(el, r.success ? '✓ Connection successful!' : '✗ '+(r.error||'Failed'), r.success?'success':'error');
+}
+
+async function connectAndLaunch() {
+    if (!selectedMode) { showToast('Choose a database mode first','error'); return; }
+    const cfg = buildSelConfig();
+    const r = await apiCall('checkConnection', { config:cfg });
+    if (r.success) {
+        dbConfig = cfg;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
+        hideSelectorAndLaunch();
+    } else {
+        // May need init (new local file or new MySQL DB)
+        const init = await apiCall('initDatabase', { config:cfg });
+        if (init.success) {
+            dbConfig = cfg;
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
+            hideSelectorAndLaunch();
+            return;
+        }
+        const el = document.getElementById(selectedMode==='mysql'?'sel-msg':'sel-sqlite-msg');
+        showSelMsg(el, '✗ '+(r.error||'Connection failed'), 'error');
+    }
+}
+
+function showSelMsg(el, text, type) {
+    el.style.display = 'block';
+    const colors = { info:['rgba(88,166,255,.1)','var(--accent-blue)'], success:['rgba(63,185,80,.1)','var(--accent-green)'], error:['rgba(248,81,73,.1)','var(--accent-red)'] };
+    [el.style.background, el.style.color] = colors[type] || colors.info;
+    el.textContent = text;
+}
+
+function hideSelectorAndLaunch() {
+    document.getElementById('db-selector-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    updateDbBadge();
+    loadJobs(); loadResume();
+}
+
+function updateDbBadge() {
+    const b = document.getElementById('db-mode-indicator');
+    const t = document.getElementById('db-mode-text');
+    const m = dbConfig?.mode || 'local';
+    b.className = 'db-mode-badge ' + (m==='mysql'?'mysql':'local');
+    t.textContent = m === 'mysql' ? 'MySQL' : 'Local';
+}
+
+// ══════════════════════════════════════════
+//  JOBS
+// ══════════════════════════════════════════
+async function loadJobs() {
+    const r = await apiCall('getJobs', { config:dbConfig });
+    if (r.success) { jobs = r.data || []; renderJobs(); updateStats(); }
+    else showToast('Load error: '+r.error, 'error');
+}
+
+function renderJobs() {
+    const c = document.getElementById('applications-container');
+    const filtered = getFilteredJobs();
+    if (!jobs.length) { c.innerHTML = emptyState('📋','No Applications Yet','Click "New Application" to start tracking'); return; }
+    if (!filtered.length) { c.innerHTML = emptyState('🔍',`No ${currentFilter} Applications`,'No applications match this filter'); return; }
+    const sorted = sortJobs(filtered);
+    const si = col => currentSort.column!==col?'↕':currentSort.direction==='asc'?'↑':'↓';
+    c.innerHTML = `<div class="jobs-table-container"><table class="jobs-table">
+        <thead><tr>
+            <th class="sortable" onclick="sortBy('company')">Company ${si('company')}</th>
+            <th class="sortable" onclick="sortBy('title')">Position ${si('title')}</th>
+            <th class="sortable" onclick="sortBy('date')">Date ${si('date')}</th>
+            <th class="sortable" onclick="sortBy('contacts')">Contacts ${si('contacts')}</th>
+            <th class="sortable" onclick="sortBy('comms')">Comms ${si('comms')}</th>
+            <th class="sortable" onclick="sortBy('status')">Status ${si('status')}</th>
+        </tr></thead>
+        <tbody>${sorted.map(renderJobRow).join('')}</tbody>
+    </table></div>`;
+}
+
+function emptyState(icon, title, sub) {
+    return `<div class="empty-state"><div class="empty-state-icon">${icon}</div><h3>${title}</h3><p>${sub}</p></div>`;
+}
+
+function renderJobRow(job) {
+    const sc = job.status.toLowerCase().replace(' ','-');
+    const cc = safeJsonLength(job.contacts);
+    const mc = safeJsonLength(job.communications);
+    const fd = fmtDate(job.application_date || (job.created_at||'').split(' ')[0]);
+    return `<tr class="job-row" onclick="viewJob(${job.id})">
+        <td class="job-company-cell">${esc(job.company)}</td>
+        <td class="job-title-cell">${esc(job.title)}</td>
+        <td class="job-date-cell">${fd}</td>
+        <td class="job-contacts-cell">${cc}</td>
+        <td class="job-contacts-cell">${mc}</td>
+        <td><span class="status-badge status-${sc}">${job.status}</span></td>
+    </tr>`;
+}
+
+function safeJsonLength(s) { try { return s ? JSON.parse(s).length : 0; } catch(e){ return 0; } }
+function fmtDate(d) {
+    if (!d) return '-';
+    const [y,m,day] = d.split('-');
+    if (!y) return '-';
+    return new Date(+y,+m-1,+day).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function sortJobs(list) {
+    return [...list].sort((a,b)=>{
+        let va,vb;
+        switch(currentSort.column){
+            case 'company':  va=a.company.toLowerCase(); vb=b.company.toLowerCase(); break;
+            case 'title':    va=a.title.toLowerCase();   vb=b.title.toLowerCase();   break;
+            case 'date':     va=new Date(a.application_date||a.created_at||0); vb=new Date(b.application_date||b.created_at||0); break;
+            case 'contacts': va=safeJsonLength(a.contacts); vb=safeJsonLength(b.contacts); break;
+            case 'comms':    va=safeJsonLength(a.communications); vb=safeJsonLength(b.communications); break;
+            case 'status': { const so=['Submitted','In Progress','Interviewing','Rejected','Closed']; va=so.indexOf(a.status); vb=so.indexOf(b.status); break; }
+            default: return 0;
+        }
+        if(va<vb) return currentSort.direction==='asc'?-1:1;
+        if(va>vb) return currentSort.direction==='asc'? 1:-1;
+        return 0;
+    });
+}
+
+function sortBy(col) {
+    if(currentSort.column===col) currentSort.direction=currentSort.direction==='asc'?'desc':'asc';
+    else { currentSort.column=col; currentSort.direction=['date','contacts','comms'].includes(col)?'desc':'asc'; }
+    renderJobs();
+}
+
+function updateStats() {
+    const s={submitted:0,'in-progress':0,interviewing:0,rejected:0,closed:0}; let tc=0;
+    jobs.forEach(j=>{ const k=j.status.toLowerCase().replace(' ','-'); if(s.hasOwnProperty(k)) s[k]++; tc+=safeJsonLength(j.contacts); });
+    document.getElementById('stat-all').textContent=jobs.length;
+    document.getElementById('stat-submitted').textContent=s.submitted;
+    document.getElementById('stat-progress').textContent=s['in-progress'];
+    document.getElementById('stat-interviewing').textContent=s.interviewing;
+    document.getElementById('stat-rejected').textContent=s.rejected;
+    document.getElementById('stat-closed').textContent=s.closed;
+    document.getElementById('stat-contacts').textContent=tc;
+}
+
+function filterByStatus(status) {
+    currentFilter=status;
+    document.querySelectorAll('.stat-card.stat-clickable').forEach(c=>c.classList.remove('active'));
+    const id=status==='all'?'filter-all':`filter-${status.toLowerCase().replace(' ','-')}`;
+    document.getElementById(id)?.classList.add('active');
+    renderJobs();
+}
+function getFilteredJobs() { return currentFilter==='all'?jobs:jobs.filter(j=>j.status===currentFilter); }
+
+// ══════════════════════════════════════════
+//  VIEW JOB
+// ══════════════════════════════════════════
+function viewJob(id) {
+    const job = jobs.find(j=>j.id===id); if(!job) return;
+    currentJobId = id;
+    const contacts = safeJson(job.contacts,[]);
+    const docs     = safeJson(job.documents,[]);
+    const comms    = safeJson(job.communications,[]);
+    const rounds   = ['HR Screen','Managers','Peers','Presentation/Demo','Executive Team'];
+    const rIdx     = rounds.indexOf(job.interview_round);
+    const icons    = {'Email':'📧','Phone Call':'📞','Video Call':'📹','In-Person Meeting':'🤝','LinkedIn Message':'💼','Other':'💬'};
+
+    document.getElementById('view-job-title').textContent = job.title;
+    document.getElementById('view-job-body').innerHTML = `
+        <div class="job-detail-section"><h3>Company</h3><p style="font-size:1.125rem;color:var(--accent-blue);">${esc(job.company)}</p></div>
+        ${job.url?`<div class="job-detail-section"><h3>Job Posting</h3><a href="${esc(job.url)}" target="_blank" style="color:var(--accent-blue);word-break:break-all;">${esc(job.url)}</a></div>`:''}
+        ${job.company_website?`<div class="job-detail-section"><h3>Company Website</h3><a href="${esc(job.company_website)}" target="_blank" style="color:var(--accent-blue);word-break:break-all;">${esc(job.company_website)}</a></div>`:''}
+        <div class="job-detail-section"><h3>Status</h3><span class="status-badge status-${job.status.toLowerCase().replace(' ','-')}">${job.status}</span></div>
+        ${job.interview_round?`<div class="job-detail-section"><h3>Interview Progress</h3><div class="interview-round-indicator">${rounds.map((r,i)=>`<div class="round-step ${i<rIdx?'completed':''} ${i===rIdx?'active':''}">${r}</div>`).join('')}</div></div>`:''}
+        <div class="job-detail-section"><h3>Documents (${docs.length})</h3>
+            ${docs.length>0?`<div class="uploaded-files">${docs.map((d,i)=>`
+                <div class="uploaded-file">
+                    ${d.isInterviewTips?'📝':'📄'} ${esc(d.name)}
+                    ${d.data?`<button class="btn btn-secondary" style="padding:.2rem .5rem;font-size:.7rem;" onclick="viewJobDoc(${id},${i});event.stopPropagation();">View</button>`:''}
+                    <span class="uploaded-file-remove" onclick="deleteJobDoc(${id},${i});event.stopPropagation();" title="Remove document">×</span>
+                </div>`).join('')}</div>`
+            :'<p style="color:var(--text-secondary);">No documents</p>'}
+        </div>
+        <div class="job-detail-section"><h3>Contacts (${contacts.length})</h3>
+            ${contacts.length>0?contacts.map(c=>`<div class="contact-card"><div class="contact-info"><h4>${esc(c.name)}</h4><p>${esc(c.title||'')}${c.email?' • '+esc(c.email):''}</p>${c.phone?`<p>📱 ${esc(c.phone)}</p>`:''} ${c.linkedin?`<p><a href="${esc(c.linkedin)}" target="_blank" style="color:var(--accent-blue);">LinkedIn</a></p>`:''} ${c.notes?`<p style="font-style:italic;">"${esc(c.notes)}"</p>`:''}</div><span class="contact-role">${c.role}</span></div>`).join('')
+            :'<p style="color:var(--text-secondary);">No contacts added</p>'}
+        </div>
+        <div class="job-detail-section"><h3>Communications (${comms.length})</h3>
+            ${[...comms].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(c=>`
+                <div class="contact-card"><div class="contact-info">
+                    <div style="display:flex;align-items:center;gap:.5rem;"><span>${icons[c.type]||'💬'}</span><h4>${esc(c.subject)}</h4></div>
+                    <p style="font-size:.75rem;">${c.type} • ${new Date(c.date).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}</p>
+                    ${c.notes?`<details style="margin-top:.5rem;"><summary style="cursor:pointer;font-size:.8rem;color:var(--accent-blue);">Details</summary><pre style="font-size:.8rem;color:var(--text-secondary);margin-top:.5rem;white-space:pre-wrap;font-family:inherit;background:var(--bg-tertiary);padding:.75rem;border-radius:6px;max-height:200px;overflow-y:auto;">${esc(c.notes)}</pre></details>`:''}</div></div>`).join('')
+            || '<p style="color:var(--text-secondary);">No communications logged</p>'}
+        </div>`;
+    document.getElementById('view-job-modal').classList.add('active');
+}
+
+function safeJson(s, def) { try { return s ? JSON.parse(s) : def; } catch(e){ return def; } }
+
+// ── Delete document from view ──
+async function deleteJobDoc(jobId, docIdx) {
+    if (!confirm('Remove this document from the job record?')) return;
+    const job = jobs.find(j=>j.id===jobId); if(!job) return;
+    const docs = safeJson(job.documents, []);
+    docs.splice(docIdx, 1);
+    const updated = { ...job, documents: JSON.stringify(docs), contacts: job.contacts||'[]', communications: job.communications||'[]' };
+    const r = await apiCall('saveJob', { config:dbConfig, job:updated });
+    if (r.success) {
+        showToast('Document removed','success');
+        await loadJobs();
+        viewJob(jobId); // re-render view
+    } else showToast('Error: '+r.error,'error');
+}
+
+function viewJobDoc(jobId, docIdx) {
+    const job = jobs.find(j=>j.id===jobId); if(!job) return;
+    const doc = safeJson(job.documents,[])[docIdx];
+    if(!doc||!doc.data) return;
+    if(doc.data.startsWith('data:text/html')) {
+        const html = decodeURIComponent(escape(atob(doc.data.split(',')[1])));
+        const w = window.open('','_blank'); if(w){w.document.write(html);w.document.close();}
+    } else {
+        const a = document.createElement('a'); a.href=doc.data; a.download=doc.name; a.click();
+    }
+}
+
+function editCurrentJob() {
+    const job = jobs.find(j=>j.id===currentJobId); if(!job) return;
+    closeViewJobModal();
+    document.getElementById('job-modal-title').textContent = 'Edit Job Application';
+    document.getElementById('job-id').value = job.id;
+    document.getElementById('company-name').value = job.company;
+    document.getElementById('job-title').value = job.title;
+    document.getElementById('job-url').value = job.url||'';
+    document.getElementById('company-website').value = job.company_website||'';
+    document.getElementById('app-status').value = job.status;
+    document.getElementById('interview-round').value = job.interview_round||'';
+    document.getElementById('application-date').value = job.application_date||(job.created_at?job.created_at.split(' ')[0]:'');
+    currentContacts      = safeJson(job.contacts,[]);
+    currentDocuments     = safeJson(job.documents,[]);
+    currentCommunications= safeJson(job.communications,[]);
+    renderContacts(); renderDocuments(); renderCommunications();
+    document.getElementById('job-modal').classList.add('active');
+}
+
+async function deleteCurrentJob() {
+    const job = jobs.find(j=>j.id===currentJobId);
+    if(!job||!confirm(`Delete "${job.title}" at "${job.company}"?`)) return;
+    const r = await apiCall('deleteJob',{config:dbConfig,jobId:currentJobId});
+    if(r.success){showToast('Job deleted','success');closeViewJobModal();loadJobs();}
+    else showToast('Error: '+r.error,'error');
+}
+
+async function saveJob() {
+    const jobData = {
+        id: document.getElementById('job-id').value||null,
+        company: document.getElementById('company-name').value,
+        title:   document.getElementById('job-title').value,
+        url:     document.getElementById('job-url').value,
+        company_website: document.getElementById('company-website').value,
+        status:          document.getElementById('app-status').value,
+        interview_round: document.getElementById('interview-round').value,
+        application_date:document.getElementById('application-date').value,
+        contacts:        JSON.stringify(currentContacts),
+        documents:       JSON.stringify(currentDocuments),
+        communications:  JSON.stringify(currentCommunications)
+    };
+    if(!jobData.company||!jobData.title){showToast('Company and title required','error');return;}
+    const r = await apiCall('saveJob',{config:dbConfig,job:jobData});
+    if(r.success){showToast('Saved!','success');closeJobModal();loadJobs();}
+    else showToast('Error: '+r.error,'error');
+}
+
+// ══════════════════════════════════════════
+//  AI INTERVIEW PREP
+// ══════════════════════════════════════════
+function getApiKey() { return localStorage.getItem(APIKEY_KEY)||''; }
+function saveApiKey(k) { if(k) localStorage.setItem(APIKEY_KEY,k.trim()); }
+function clearApiKeyFn() { localStorage.removeItem(APIKEY_KEY); }
+
+async function openAIPrep() {
+    const job = jobs.find(j=>j.id===currentJobId); if(!job) return;
+    document.getElementById('ai-modal').classList.add('active');
+    document.getElementById('ai-modal-footer').style.display='none';
+    document.getElementById('ai-save-btn').style.display='none';
+
+    const apiKey = getApiKey();
+    if (!apiKey) {
+        document.getElementById('ai-modal-body').innerHTML = `
+            <div style="padding:2rem;">
+                <div style="text-align:center;margin-bottom:2rem;">
+                    <div style="font-size:3rem;margin-bottom:1rem;">🤖</div>
+                    <h3 style="margin-bottom:.5rem;">AI Interview Prep</h3>
+                    <p style="color:var(--text-secondary);font-size:.875rem;">Enter an Anthropic API key for AI-powered research, or use the ChatGPT prompt builder for free.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Anthropic API Key (optional)</label>
+                    <div class="pw-wrap"><input type="password" class="form-input" id="temp-api-key" placeholder="sk-ant-..."><button type="button" class="pw-toggle" onclick="togglePw('temp-api-key',this)">${pwIconInline()}</button></div>
+                    <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Get one free at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent-blue);">console.anthropic.com</a> · Stored in browser only.</p>
+                </div>
+                <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="closeAIModal()">Cancel</button>
+                    <button class="btn btn-chatgpt" onclick="openChatGPTPrompt(${job.id})">🤖 Open in ChatGPT (no key needed)</button>
+                    <button class="btn btn-primary" onclick="saveKeyAndStartAI()">Save Key &amp; Start →</button>
+                </div>
+            </div>`;
+        document.getElementById('ai-modal-footer').style.display='flex';
+        return;
+    }
+    startAIResearch(job, apiKey);
+}
+
+function openChatGPTPrompt(jobId) {
+    const job = jobs.find(j=>j.id===jobId); if(!job) return;
+    const contacts = safeJson(job.contacts,[]);
+    const prompt = `You are an expert career coach. Please give me a comprehensive interview preparation guide for this job application:\n\nCompany: ${job.company}\nPosition: ${job.title}\n${job.company_website ? 'Company Website: '+job.company_website : ''}\n${job.url ? 'Job Posting: '+job.url : ''}\nInterview Round: ${job.interview_round || 'Not specified'}\n${contacts.length>0 ? 'Contacts: '+contacts.map(c=>`${c.name} (${c.role}${c.title?', '+c.title:''})`).join(', ') : ''}\n\nPlease cover:\n1. Company overview & recent news\n2. Role analysis and key requirements\n3. Interview strategy for this round\n4. 5 smart questions to ask them\n5. STAR story angles for this role\n6. A compelling "tell me about yourself" opening hook\n7. Contact intelligence for each person listed`;
+    const chatgptUrl = 'https://chat.openai.com/?q=' + encodeURIComponent(prompt);
+    window.open(chatgptUrl, '_blank');
+    showToast('Prompt sent to ChatGPT!', 'success');
+}
+
+async function saveKeyAndStartAI() {
+    const k = (document.getElementById('temp-api-key')?.value||'').trim();
+    if (!k) { showToast('Enter an API key or use ChatGPT option','error'); return; }
+    if (!k.startsWith('sk-ant-')) { showToast('Invalid key — should start with sk-ant-','error'); return; }
+    saveApiKey(k);
+    const job = jobs.find(j=>j.id===currentJobId);
+    if (job) startAIResearch(job, k);
+}
+
+async function startAIResearch(job, apiKey) {
+    const steps = [
+        {id:'s1',text:'Researching company background...'},
+        {id:'s2',text:'Analyzing role & requirements...'},
+        {id:'s3',text:'Profiling contacts...'},
+        {id:'s4',text:'Crafting interview strategy...'},
+        {id:'s5',text:'Generating STAR angles...'}
+    ];
+    document.getElementById('ai-modal-body').innerHTML = `
+        <div class="ai-loading">
+            <div class="ai-spinner"></div>
+            <ul class="ai-steps" id="ai-steps">${steps.map(s=>`<li class="ai-step pending" id="${s.id}">⬜ ${s.text}</li>`).join('')}</ul>
+        </div>`;
+    document.getElementById('ai-modal-footer').style.display='none';
+
+    const setStep = (id, state) => {
+        const el = document.getElementById(id); if(!el) return;
+        const icons = {done:'✅',active:'🔵',pending:'⬜',error:'❌'};
+        const text = el.textContent.replace(/^[^ ]+ /,'');
+        el.className = 'ai-step '+state;
+        el.textContent = icons[state]+' '+text;
+    };
+
+    try {
+        const contacts = safeJson(job.contacts,[]);
+        let resumeSection = '';
+        if (currentResume?.content) resumeSection = `\n\nCANDIDATE RESUME:\n${currentResume.content}`;
+
+        const systemPrompt = `You are an expert career coach. Respond ONLY with valid JSON (no markdown, no explanation).\n\nJSON structure:\n{\n  "company_overview":"2-3 sentence summary",\n  "pros":["pro1","pro2","pro3"],\n  "cons":["concern1","concern2"],\n  "competitors":["c1","c2","c3"],\n  "role_insights":"what this role entails, challenges, success metrics",\n  "contacts":[{"name":"...","inferred_background":"...","talking_points":["..."],"watch_out":"..."}],\n  "targeted_questions":["q1","q2","q3","q4","q5"],\n  "star_angles":[{"theme":"Leadership","prompt":"Tell me about a time...","angle":"How to frame for this role"}],\n  "opening_hook":"2-3 sentence tailored 'tell me about yourself'"\n}`;
+
+        const userMsg = `Company: ${job.company}\nRole: ${job.title}\n${job.company_website?'Website: '+job.company_website:''}\n${job.url?'Job posting: '+job.url:''}\nInterview round: ${job.interview_round||'N/A'}\n${contacts.length>0?'Contacts: '+contacts.map(c=>`${c.name} (${c.role}${c.title?', '+c.title:''}${c.linkedin?', LinkedIn: '+c.linkedin:''})`).join('; '):''}${resumeSection}\n\nGenerate a comprehensive interview prep guide as JSON.`;
+
+        setStep('s1','active');
+
+        // Try models in order from newest to most compatible
+        const modelsToTry = [
+            'claude-haiku-4-5-20251001',
+            'claude-haiku-3-5-20241022',
+            'claude-3-5-haiku-20241022',
+            'claude-3-haiku-20240307'
+        ];
+        let result = { success: false, error: 'No models available' };
+        for (const model of modelsToTry) {
+            result = await apiCall('aiProxy', {
+                apiKey,
+                payload: { model, max_tokens: 4000, system: systemPrompt, messages: [{ role:'user', content:userMsg }] }
+            });
+            if (result.success) break;
+            const err = result.error||'';
+            // Auth errors: stop immediately, no point trying other models
+            if (err.match(/401|auth|invalid.*key|api.key/i)) break;
+            // Only keep trying if it's a model-availability error
+            if (!err.match(/model|not.*found|invalid.*model/i)) break;
+        }
+
+        if (!result.success) throw new Error(result.error||'API request failed');
+
+        setStep('s1','done'); setStep('s2','active');
+        const data = result.data;
+        setStep('s2','done'); setStep('s3','active');
+
+        const fullText = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+        let prep;
+        try {
+            const match = fullText.match(/\{[\s\S]*\}/);
+            prep = JSON.parse(match?match[0]:fullText);
+        } catch(e) { throw new Error('AI response parse error: '+fullText.substring(0,300)); }
+
+        setStep('s3','done'); setStep('s4','active');
+        await new Promise(r=>setTimeout(r,300));
+        setStep('s4','done'); setStep('s5','active');
+        await new Promise(r=>setTimeout(r,300));
+        setStep('s5','done');
+
+        renderAIResults(job, prep, contacts);
+
+    } catch(err) {
+        let helpText = 'Check your connection and try again.';
+        if (err.message.includes('API key')||err.message.includes('401')) {
+            helpText = '<button class="btn btn-secondary" onclick="clearApiKeyFn();closeAIModal();setTimeout(()=>openAIPrep(),300);" style="margin-top:.75rem;">Update API Key</button>';
+        } else if (err.message.includes('cURL')) {
+            helpText = 'PHP cURL is not enabled. Enable it in php.ini, then restart the server.';
+        }
+        document.getElementById('ai-modal-body').innerHTML = `
+            <div style="padding:2rem;text-align:center;">
+                <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+                <h3 style="color:var(--accent-red);margin-bottom:1rem;">AI Research Failed</h3>
+                <p style="color:var(--text-secondary);font-size:.875rem;">${esc(err.message)}</p>
+                <p style="color:var(--text-muted);font-size:.8rem;margin-top:.75rem;">${helpText}</p>
+                <div style="margin-top:1.5rem;">
+                    <button class="btn btn-chatgpt" onclick="openChatGPTPrompt(${currentJobId})">🤖 Use ChatGPT Instead</button>
+                </div>
+            </div>`;
+        document.getElementById('ai-modal-footer').style.display='flex';
+    }
+}
+
+function renderAIResults(job, prep, contacts) {
+    const contactsHtml = (prep.contacts||[]).length>0
+        ? prep.contacts.map((c,i)=>{
+            const orig = contacts.find(oc=>oc.name===c.name)||contacts[i];
+            return `<div class="ai-contact-card">
+                <h4>${esc(c.name||orig?.name||'Contact '+(i+1))}</h4>
+                <span class="ai-tag">${orig?.role||'Contact'}</span>
+                <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:.5rem;"><strong>Background:</strong> ${esc(c.inferred_background||'')}</p>
+                ${(c.talking_points||[]).length>0?`<p style="font-size:.8rem;color:var(--text-secondary);"><strong>Talking points:</strong></p><ul style="font-size:.8rem;color:var(--text-secondary);padding-left:1.25rem;">${c.talking_points.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:''}
+                ${c.watch_out?`<p style="font-size:.8rem;color:var(--accent-yellow);margin-top:.5rem;">⚠ ${esc(c.watch_out)}</p>`:''}
+            </div>`;
+        }).join('')
+        : '<p style="color:var(--text-secondary);">Add contacts to the job record for personalized coaching.</p>';
+
+    const bodyHtml = `
+        <div class="ai-result-section"><h3>🏢 ${esc(job.company)} Overview</h3><p>${esc(prep.company_overview||'')}</p></div>
+        ${(prep.pros||[]).length||(prep.cons||[]).length?`<div class="ai-result-section"><h3>⚖️ Opportunity Assessment</h3>
+            ${(prep.pros||[]).length?`<p><strong style="color:var(--accent-green);">Pros:</strong></p><ul>${prep.pros.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`:''}
+            ${(prep.cons||[]).length?`<p style="margin-top:.75rem;"><strong style="color:var(--accent-yellow);">Watch Out For:</strong></p><ul>${prep.cons.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
+        </div>`:''}
+        ${(prep.competitors||[]).length?`<div class="ai-result-section"><h3>🎯 Competitive Landscape</h3><p>${prep.competitors.map(c=>esc(c)).join(', ')}</p></div>`:''}
+        <div class="ai-result-section"><h3>💼 Role Intelligence</h3><p>${esc(prep.role_insights||'')}</p></div>
+        ${prep.opening_hook?`<div class="ai-result-section"><h3>🎙️ Opening Hook</h3><p style="font-style:italic;">"${esc(prep.opening_hook)}"</p></div>`:''}
+        <div class="ai-result-section"><h3>👥 Contact Intelligence</h3>${contactsHtml}</div>
+        ${(prep.targeted_questions||[]).length?`<div class="ai-result-section"><h3>❓ Questions to Ask</h3><ul>${prep.targeted_questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:''}
+        ${(prep.star_angles||[]).length?`<div class="ai-result-section"><h3>⭐ STAR Story Angles</h3>${prep.star_angles.map(s=>`<div style="margin-bottom:.75rem;"><p><strong>${esc(s.theme)}</strong> — <em>${esc(s.prompt)}</em></p><p style="color:var(--accent-blue);">${esc(s.angle)}</p></div>`).join('')}</div>`:''}`;
+
+    document.getElementById('ai-modal-body').innerHTML = bodyHtml;
+    _aiResultText = document.getElementById('ai-modal-body').innerText;
+    _aiResultHTML = bodyHtml;
+    document.getElementById('ai-modal-footer').style.display='flex';
+    document.getElementById('ai-save-btn').style.display='inline-flex';
+}
+
+function copyAIResults() {
+    if (_aiResultText) navigator.clipboard.writeText(_aiResultText).then(()=>showToast('Copied!','success'));
+}
+
+async function saveAIResultsToJob() {
+    if (!_aiResultHTML || !currentJobId) return;
+    const job = jobs.find(j=>j.id===currentJobId); if(!job) return;
+
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AI Interview Prep - ${job.company}</title>
+    <style>body{font-family:sans-serif;max-width:820px;margin:0 auto;padding:40px;color:#333;background:#fff;}
+    h3{color:#6754c4;border-bottom:1px solid #e5e5e5;padding-bottom:8px;margin-top:24px;}
+    li,p{line-height:1.7;font-size:.95rem;margin-bottom:.4rem;} ul{padding-left:1.25rem;}</style>
+    </head><body><h1>AI Interview Prep: ${job.company} — ${job.title}</h1>
+    <p><em>Generated ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</em></p>
+    ${_aiResultHTML.replace(/class="ai-result-section"/g,'style="background:#f8f8f8;border:1px solid #e5e5e5;border-radius:8px;padding:1.25rem;margin-bottom:1rem;"').replace(/class="ai-(?:\w+)"/g,'')}</body></html>`;
+
+    const b64 = btoa(unescape(encodeURIComponent(fullHtml)));
+    const docData = { name:`AI Prep - ${job.company} - ${new Date().toLocaleDateString()}.html`, type:'text/html', data:'data:text/html;base64,'+b64, isInterviewTips:true };
+
+    const docs = safeJson(job.documents,[]);
+    const filtered = docs.filter(d=>!d.isInterviewTips);
+    filtered.push(docData);
+
+    const updated = { ...job, documents:JSON.stringify(filtered), contacts:job.contacts||'[]', communications:job.communications||'[]' };
+    const r = await apiCall('saveJob',{config:dbConfig,job:updated});
+    if (r.success) {
+        showToast('AI Prep saved to job record!','success');
+        await loadJobs();
+        document.getElementById('ai-save-btn').style.display='none';
+    } else showToast('Error saving: '+r.error,'error');
+}
+
+function closeAIModal() { document.getElementById('ai-modal').classList.remove('active'); }
+
+// ══════════════════════════════════════════
+//  CONTACTS
+// ══════════════════════════════════════════
+function renderContacts() {
+    const c = document.getElementById('contacts-list');
+    if(!currentContacts.length){ c.innerHTML='<p style="color:var(--text-secondary);font-size:.875rem;">No contacts added</p>'; return; }
+    c.innerHTML = currentContacts.map((c,i)=>`
+        <div class="contact-card">
+            <div class="contact-info"><h4>${esc(c.name)}</h4><p>${esc(c.title||'')}${c.email?' • '+esc(c.email):''}</p></div>
+            <div style="display:flex;align-items:center;gap:.75rem;">
+                <span class="contact-role">${c.role}</span>
+                <div class="contact-actions">
+                    <button class="btn btn-secondary" onclick="editContact(${i});event.stopPropagation();">Edit</button>
+                    <button class="btn btn-secondary" onclick="deleteContact(${i});event.stopPropagation();" style="color:var(--accent-red);">Del</button>
+                </div>
+            </div>
+        </div>`).join('');
+}
+function openContactModal(){
+    editContactIdx=-1;
+    document.getElementById('contact-modal-title').textContent='Add Contact';
+    ['contact-name','contact-title','contact-linkedin','contact-email','contact-phone','contact-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('contact-role').value='Recruiter';
+    document.getElementById('contact-modal').classList.add('active');
+}
+function editContact(i){
+    editContactIdx=i; const c=currentContacts[i];
+    document.getElementById('contact-modal-title').textContent='Edit Contact';
+    document.getElementById('contact-name').value=c.name;
+    document.getElementById('contact-title').value=c.title||'';
+    document.getElementById('contact-role').value=c.role;
+    document.getElementById('contact-linkedin').value=c.linkedin||'';
+    document.getElementById('contact-email').value=c.email||'';
+    document.getElementById('contact-phone').value=c.phone||'';
+    document.getElementById('contact-notes').value=c.notes||'';
+    document.getElementById('contact-modal').classList.add('active');
+}
+function deleteContact(i){ if(confirm('Delete this contact?')){ currentContacts.splice(i,1); renderContacts(); } }
+function saveContact(){
+    const c={ name:document.getElementById('contact-name').value, title:document.getElementById('contact-title').value, role:document.getElementById('contact-role').value, linkedin:document.getElementById('contact-linkedin').value, email:document.getElementById('contact-email').value, phone:document.getElementById('contact-phone').value, notes:document.getElementById('contact-notes').value };
+    if(!c.name){ showToast('Name required','error'); return; }
+    if(editContactIdx>=0) currentContacts[editContactIdx]=c; else currentContacts.push(c);
+    renderContacts(); closeContactModal(); showToast('Contact saved','success');
+}
+function closeContactModal(){ document.getElementById('contact-modal').classList.remove('active'); }
+
+// ══════════════════════════════════════════
+//  COMMUNICATIONS
+// ══════════════════════════════════════════
+function renderCommunications(){
+    const c=document.getElementById('communications-list');
+    if(!currentCommunications.length){ c.innerHTML='<p style="color:var(--text-secondary);font-size:.875rem;">No communications logged</p>'; return; }
+    const icons={'Email':'📧','Phone Call':'📞','Video Call':'📹','In-Person Meeting':'🤝','LinkedIn Message':'💼','Other':'💬'};
+    c.innerHTML=[...currentCommunications].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(comm=>{
+        const oi=currentCommunications.indexOf(comm);
+        const dt=new Date(comm.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+        return `<div class="contact-card" style="align-items:flex-start;">
+            <div class="contact-info" style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:.5rem;"><span>${icons[comm.type]||'💬'}</span><h4>${esc(comm.subject)}</h4></div>
+                <p style="font-size:.75rem;">${comm.type} • ${dt}</p>
+                ${comm.notes?`<p style="font-size:.8rem;color:var(--text-secondary);margin-top:.5rem;max-height:60px;overflow:hidden;">${esc(comm.notes.substring(0,200))}${comm.notes.length>200?'...':''}</p>`:''}
+            </div>
+            <div class="contact-actions">
+                <button class="btn btn-secondary" onclick="editComm(${oi});event.stopPropagation();">Edit</button>
+                <button class="btn btn-secondary" onclick="deleteComm(${oi});event.stopPropagation();" style="color:var(--accent-red);">Del</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+function openCommunicationModal(){
+    editCommIdx=-1;
+    document.getElementById('comm-modal-title').textContent='Add Communication';
+    document.getElementById('comm-type').value='Email';
+    document.getElementById('comm-date').value=new Date().toISOString().slice(0,16);
+    document.getElementById('comm-subject').value=''; document.getElementById('comm-notes').value='';
+    document.getElementById('communication-modal').classList.add('active');
+}
+function editComm(i){
+    editCommIdx=i; const c=currentCommunications[i];
+    document.getElementById('comm-modal-title').textContent='Edit Communication';
+    document.getElementById('comm-type').value=c.type;
+    document.getElementById('comm-date').value=c.date;
+    document.getElementById('comm-subject').value=c.subject;
+    document.getElementById('comm-notes').value=c.notes||'';
+    document.getElementById('communication-modal').classList.add('active');
+}
+function deleteComm(i){ if(confirm('Delete?')){ currentCommunications.splice(i,1); renderCommunications(); } }
+function saveCommunication(){
+    const c={ type:document.getElementById('comm-type').value, date:document.getElementById('comm-date').value, subject:document.getElementById('comm-subject').value, notes:document.getElementById('comm-notes').value };
+    if(!c.subject||!c.date){ showToast('Fill required fields','error'); return; }
+    if(editCommIdx>=0) currentCommunications[editCommIdx]=c; else currentCommunications.push(c);
+    renderCommunications(); closeCommunicationModal(); showToast('Saved','success');
+}
+function closeCommunicationModal(){ document.getElementById('communication-modal').classList.remove('active'); }
+
+// ══════════════════════════════════════════
+//  DOCUMENTS
+// ══════════════════════════════════════════
+function setupFileUploads(){
+    const docArea=document.getElementById('doc-upload-area');
+    const docInput=document.getElementById('doc-upload');
+    if(docArea){
+        docArea.addEventListener('click',()=>docInput.click());
+        docArea.addEventListener('dragover',e=>{e.preventDefault();docArea.classList.add('dragover');});
+        docArea.addEventListener('dragleave',()=>docArea.classList.remove('dragover'));
+        docArea.addEventListener('drop',e=>{e.preventDefault();docArea.classList.remove('dragover');handleDocFiles(e.dataTransfer.files);});
+        docInput.addEventListener('change',e=>handleDocFiles(e.target.files));
+    }
+    const resArea=document.getElementById('resume-upload-area');
+    const resInput=document.getElementById('resume-upload');
+    if(resArea){
+        resArea.addEventListener('click',()=>resInput.click());
+        resArea.addEventListener('dragover',e=>{e.preventDefault();resArea.classList.add('dragover');});
+        resArea.addEventListener('dragleave',()=>resArea.classList.remove('dragover'));
+        resArea.addEventListener('drop',e=>{e.preventDefault();resArea.classList.remove('dragover');handleResumeFile(e.dataTransfer.files[0]);});
+        resInput.addEventListener('change',e=>handleResumeFile(e.target.files[0]));
+    }
+}
+function handleDocFiles(files){
+    if(currentDocuments.length+files.length>10){showToast('Max 10 documents','error');return;}
+    Array.from(files).forEach(file=>{
+        const reader=new FileReader();
+        reader.onload=e=>{currentDocuments.push({name:file.name,type:file.type,data:e.target.result});renderDocuments();};
+        reader.readAsDataURL(file);
+    });
+}
+function renderDocuments(){
+    const c=document.getElementById('uploaded-docs');
+    c.innerHTML=currentDocuments.map((d,i)=>`<div class="uploaded-file">📄 ${esc(d.name)}<span class="uploaded-file-remove" onclick="currentDocuments.splice(${i},1);renderDocuments();" title="Remove">×</span></div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  RESUME
+// ══════════════════════════════════════════
+function handleResumeFile(file){
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+        currentResume={name:file.name,type:file.type,data:e.target.result};
+        document.getElementById('current-resume-display').innerHTML=`<div class="uploaded-file">📄 ${esc(file.name)}<span class="uploaded-file-remove" onclick="currentResume=null;document.getElementById('current-resume-display').innerHTML='';">×</span></div>`;
+    };
+    reader.readAsDataURL(file);
+}
+async function saveResume(){
+    if(!currentResume){showToast('Select a file first','error');return;}
+    const r=await apiCall('saveResume',{config:dbConfig,resume:currentResume});
+    if(r.success){showToast('Resume saved','success');closeResumeModal();}
+    else showToast('Error: '+r.error,'error');
+}
+async function loadResume(){
+    const r=await apiCall('getResume',{config:dbConfig});
+    if(r.success&&r.data){
+        currentResume=r.data;
+        document.getElementById('current-resume-display').innerHTML=`<div class="uploaded-file">📄 ${esc(r.data.name)}<span class="uploaded-file-remove" onclick="currentResume=null;this.parentElement.remove();">×</span></div>`;
+    }
+}
+
+// ══════════════════════════════════════════
+//  COMPANY WEBSITE EXTRACT
+// ══════════════════════════════════════════
+function extractCompanyWebsite(){
+    const url=document.getElementById('job-url').value;
+    const field=document.getElementById('company-website');
+    if(field.value||!url) return;
+    try {
+        const u=new URL(url);
+        const boards=['linkedin.com','indeed.com','glassdoor.com','ziprecruiter.com','monster.com','lever.co','greenhouse.io','workday.com','myworkdayjobs.com','taleo.net','icims.com','smartrecruiters.com','jobvite.com','boards.greenhouse.io'];
+        if(!boards.some(b=>u.hostname.includes(b))){
+            const parts=u.hostname.split('.');
+            let host=u.hostname;
+            if(parts.length>2&&['careers','jobs','www','apply','recruiting'].includes(parts[0])) host=parts.slice(-2).join('.');
+            field.value='https://'+host;
+        }
+    } catch(e){}
+}
+
+// ══════════════════════════════════════════
+//  ALL CONTACTS MODAL
+// ══════════════════════════════════════════
+function openAllContactsModal(){
+    const all=[];
+    jobs.forEach(j=>{ safeJson(j.contacts,[]).forEach((c,i)=>all.push({...c,jobId:j.id,jobTitle:j.title,jobCompany:j.company})); });
+    const body=document.getElementById('all-contacts-body');
+    if(!all.length){ body.innerHTML=emptyState('👤','No Contacts Yet','Add contacts to job records'); }
+    else {
+        const byRole={};
+        all.forEach(c=>{ if(!byRole[c.role]) byRole[c.role]=[]; byRole[c.role].push(c); });
+        body.innerHTML='<div style="display:flex;flex-direction:column;gap:1.5rem;">'+
+            Object.entries(byRole).map(([role,contacts])=>`
+                <div><h3 style="font-size:.875rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border-color);">${role}s (${contacts.length})</h3>
+                ${contacts.map(c=>`<div class="contact-card" style="margin-bottom:.5rem;">
+                    <div class="contact-info">
+                        <h4>${esc(c.name)}</h4>
+                        <p>${esc(c.title||'')}${c.email?' • '+esc(c.email):''}</p>
+                        <p style="font-size:.75rem;color:var(--accent-blue);">${esc(c.jobCompany)} — ${esc(c.jobTitle)}</p>
+                        ${c.linkedin?`<p style="font-size:.75rem;"><a href="${esc(c.linkedin)}" target="_blank" style="color:var(--accent-blue);">LinkedIn</a></p>`:''}
+                    </div>
+                </div>`).join('')}</div>`).join('')+'</div>';
+    }
+    document.getElementById('all-contacts-modal').classList.add('active');
+}
+function closeAllContactsModal(){ document.getElementById('all-contacts-modal').classList.remove('active'); }
+
+// ══════════════════════════════════════════
+//  CONFIG / SETTINGS MODAL
+// ══════════════════════════════════════════
+function openConfigModal(){
+    const mode=dbConfig?.mode||'local';
+    _cfgMode=mode;
+    switchCfgMode(mode);
+    if(mode==='mysql'){
+        document.getElementById('cfg-host').value=dbConfig.host||'localhost';
+        document.getElementById('cfg-port').value=dbConfig.port||3306;
+        document.getElementById('cfg-dbname').value=dbConfig.database||'job_tracker';
+        document.getElementById('cfg-user').value=dbConfig.user||'root';
+        document.getElementById('cfg-pass').value=dbConfig.password||'';
+    } else {
+        document.getElementById('cfg-sqlite-file').value=dbConfig?.filename||'jobtracker.db';
+    }
+    const key=getApiKey();
+    document.getElementById('cfg-api-key').value=key;
+    const ind=document.getElementById('apikey-status-indicator');
+    if(key){ ind.className='apikey-status has-key'; ind.textContent='✓ API key is set'; }
+    else { ind.className='apikey-status no-key'; ind.textContent='No API key — AI features will prompt you'; }
+    document.getElementById('config-conn-status').className='connection-status connected';
+    document.getElementById('config-conn-text').textContent=`Connected (${mode==='mysql'?'MySQL':'Local JSON'})`;
+    document.getElementById('config-modal').classList.add('active');
+}
+
+function switchCfgMode(mode){
+    _cfgMode=mode;
+    document.getElementById('cfg-mysql-fields').style.display=mode==='mysql'?'block':'none';
+    document.getElementById('cfg-sqlite-fields').style.display=mode!=='mysql'?'block':'none';
+    document.getElementById('cfg-mysql-btn').style.background=mode==='mysql'?'rgba(88,166,255,.15)':'';
+    document.getElementById('cfg-mysql-btn').style.borderColor=mode==='mysql'?'var(--accent-blue)':'var(--border-color)';
+    document.getElementById('cfg-sqlite-btn').style.background=mode!=='mysql'?'rgba(88,166,255,.15)':'';
+    document.getElementById('cfg-sqlite-btn').style.borderColor=mode!=='mysql'?'var(--accent-blue)':'var(--border-color)';
+}
+
+function buildCfgConfig(){
+    if(_cfgMode==='mysql') return { mode:'mysql', host:document.getElementById('cfg-host').value, port:parseInt(document.getElementById('cfg-port').value), database:document.getElementById('cfg-dbname').value, user:document.getElementById('cfg-user').value, password:document.getElementById('cfg-pass').value };
+    return { mode:'local', filename:document.getElementById('cfg-sqlite-file').value||'jobtracker.db' };
+}
+
+async function testCfgConn(){
+    const cfg=buildCfgConfig();
+    const s=document.getElementById('config-conn-status'); const t=document.getElementById('config-conn-text');
+    s.className='connection-status disconnected'; t.textContent='Testing...';
+    const r=await apiCall('checkConnection',{config:cfg});
+    s.className='connection-status '+(r.success?'connected':'disconnected');
+    t.textContent=r.success?'Connected!':'Failed: '+(r.error||'Unknown error');
+}
+
+async function saveCfgAndReload(){
+    const key=(document.getElementById('cfg-api-key').value||'').trim();
+    if(key) saveApiKey(key);
+    const cfg=buildCfgConfig();
+    const r=await apiCall('checkConnection',{config:cfg});
+    if(r.success){
+        dbConfig=cfg; localStorage.setItem(CONFIG_KEY,JSON.stringify(dbConfig));
+        updateDbBadge(); closeConfigModal(); loadJobs(); loadResume();
+        showToast('Database reconnected!','success');
+    } else {
+        const init=await apiCall('initDatabase',{config:cfg});
+        if(init.success){
+            dbConfig=cfg; localStorage.setItem(CONFIG_KEY,JSON.stringify(dbConfig));
+            updateDbBadge(); closeConfigModal(); loadJobs(); loadResume();
+            showToast('Database initialized and connected!','success');
+        } else showToast('Connection failed: '+(r.error||'Unknown'),'error');
+    }
+}
+
+function clearApiKey(){
+    if(!confirm('Clear the saved API key?')) return;
+    clearApiKeyFn();
+    document.getElementById('cfg-api-key').value='';
+    const ind=document.getElementById('apikey-status-indicator');
+    ind.className='apikey-status no-key'; ind.textContent='No API key — AI features will prompt you';
+    document.getElementById('api-test-result').textContent='';
+    showToast('API key cleared','success');
+}
+
+async function testApiKey(){
+    const keyInField = (document.getElementById('cfg-api-key').value||'').trim();
+    const key = keyInField || getApiKey();
+    const resultEl = document.getElementById('api-test-result');
+    const btn = document.getElementById('api-test-btn');
+
+    if(!key){ resultEl.style.color='var(--accent-red)'; resultEl.textContent='No key entered'; return; }
+    if(!key.startsWith('sk-ant-') && !key.startsWith('sk-')){ resultEl.style.color='var(--accent-red)'; resultEl.textContent='Key format looks wrong (should start with sk-ant-)'; return; }
+
+    btn.disabled=true; btn.textContent='Testing...';
+    resultEl.style.color='var(--text-secondary)'; resultEl.textContent='Sending test request...';
+
+    // Save the key first so apiCall can use it
+    if(keyInField) saveApiKey(keyInField);
+
+    // Try a minimal API call — just a 1-token ping
+    const models = ['claude-haiku-4-5-20251001','claude-haiku-3-5-20241022','claude-3-5-haiku-20241022','claude-3-haiku-20240307'];
+    let lastErr = '';
+    let worked = false;
+    let workingModel = '';
+    for(const model of models){
+        const r = await apiCall('aiProxy',{ apiKey: key, payload:{ model, max_tokens:5, messages:[{role:'user',content:'Say OK'}] }});
+        if(r.success){ worked=true; workingModel=model; break; }
+        lastErr = r.error||'Unknown error';
+        // Stop if it's an auth error — no point trying other models
+        if(lastErr.match(/401|auth|invalid.*key|api.key/i)) break;
+    }
+
+    btn.disabled=false; btn.textContent='🔌 Test API Key';
+    if(worked){
+        resultEl.style.color='var(--accent-green)';
+        resultEl.textContent='✓ Connected! Using '+workingModel;
+        const ind=document.getElementById('apikey-status-indicator');
+        ind.className='apikey-status has-key'; ind.textContent='✓ API key is set and working';
+        showToast('API key works!','success');
+    } else {
+        resultEl.style.color='var(--accent-red)';
+        resultEl.textContent='✗ '+lastErr;
+        showToast('API test failed: '+lastErr,'error');
+    }
+}
+
+function resetConnection(){
+    if(!confirm('This will clear your saved connection settings so you can test the first-time setup.\n\nYour data in the database is NOT deleted.\n\nContinue?')) return;
+    localStorage.removeItem(CONFIG_KEY);
+    showToast('Connection reset — reloading...','info');
+    setTimeout(()=>location.reload(), 1500);
+}
+
+function closeConfigModal(){ document.getElementById('config-modal').classList.remove('active'); }
+
+// ══════════════════════════════════════════
+//  MIGRATION
+// ══════════════════════════════════════════
+function openMigrationModal(){
+    migSrcMode=null; migDstMode=null;
+    ['mig-src-mysql-fields','mig-src-sqlite-fields','mig-dst-mysql-fields','mig-dst-sqlite-fields'].forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById('mig-progress-area').style.display='none';
+    document.getElementById('mig-result').style.display='none';
+    document.getElementById('mig-run-btn').disabled=false;
+
+    if(dbConfig?.mode==='mysql'){
+        setMigMode('src','mysql');
+        document.getElementById('mig-src-host').value=dbConfig.host||'localhost';
+        document.getElementById('mig-src-port').value=dbConfig.port||3306;
+        document.getElementById('mig-src-db').value=dbConfig.database||'job_tracker';
+        document.getElementById('mig-src-user').value=dbConfig.user||'root';
+        document.getElementById('mig-src-pass').value=dbConfig.password||'';
+    } else if(dbConfig?.mode==='local'){
+        setMigMode('src','local');
+        document.getElementById('mig-src-sqlite').value=dbConfig.filename||'jobtracker.db';
+    }
+    document.getElementById('migration-modal').classList.add('active');
+}
+
+function setMigMode(which, mode){
+    if(which==='src') migSrcMode=mode; else migDstMode=mode;
+    document.getElementById(`mig-${which}-mysql-fields`).style.display=mode==='mysql'?'block':'none';
+    document.getElementById(`mig-${which}-sqlite-fields`).style.display=mode!=='mysql'?'block':'none';
+    document.getElementById(`mig-${which}-mysql-btn`).style.background=mode==='mysql'?'rgba(88,166,255,.15)':'';
+    document.getElementById(`mig-${which}-sqlite-btn`).style.background=mode!=='mysql'?'rgba(88,166,255,.15)':'';
+}
+
+function getMigCfg(which){
+    const mode = which==='src' ? migSrcMode : migDstMode;
+    if(!mode) return null;
+    if(mode==='mysql') return { mode:'mysql', host:document.getElementById(`mig-${which}-host`).value, port:parseInt(document.getElementById(`mig-${which}-port`).value), database:document.getElementById(`mig-${which}-db`).value, user:document.getElementById(`mig-${which}-user`).value, password:document.getElementById(`mig-${which}-pass`).value };
+    return { mode:'local', filename:document.getElementById(`mig-${which}-sqlite`).value||'jobtracker.db' };
+}
+
+function migStepSet(id,state){ const el=document.getElementById(id); if(!el) return; const icons={pending:'⬜',active:'🔵',done:'✅',error:'❌'}; const text=el.textContent.replace(/^[^ ]+ /,''); el.className='migration-step '+state; el.innerHTML=`<span>${icons[state]}</span> ${text}`; }
+
+async function runMigration(){
+    if(!migSrcMode){showToast('Select source database','error');return;}
+    if(!migDstMode){showToast('Select destination database','error');return;}
+    const src=getMigCfg('src'); const dst=getMigCfg('dst');
+    document.getElementById('mig-progress-area').style.display='block';
+    document.getElementById('mig-result').style.display='none';
+    document.getElementById('mig-run-btn').disabled=true;
+    ['mig-s1','mig-s2','mig-s3','mig-s4','mig-s5'].forEach(id=>migStepSet(id,'pending'));
+    try {
+        migStepSet('mig-s1','active');
+        const c1=await apiCall('checkConnection',{config:src}); if(!c1.success) throw new Error('Source: '+c1.error);
+        migStepSet('mig-s1','done'); migStepSet('mig-s2','active');
+        const exp=await apiCall('exportData',{config:src}); if(!exp.success) throw new Error('Export: '+exp.error);
+        migStepSet('mig-s2','done'); migStepSet('mig-s3','active');
+        const c2=await apiCall('checkConnection',{config:dst});
+        if(!c2.success) {
+            const init=await apiCall('initDatabase',{config:dst});
+            if(!init.success) throw new Error('Destination: '+(c2.error||init.error));
+        }
+        migStepSet('mig-s3','done'); migStepSet('mig-s4','active');
+        const imp=await apiCall('importData',{config:dst,data:exp.data}); if(!imp.success) throw new Error('Import: '+imp.error);
+        migStepSet('mig-s4','done'); migStepSet('mig-s5','done');
+        const res=document.getElementById('mig-result');
+        res.style.display='block'; res.style.background='rgba(63,185,80,.1)'; res.style.border='1px solid rgba(63,185,80,.3)'; res.style.color='var(--accent-green)';
+        res.innerHTML=`✅ Migration complete! Imported: <strong>${imp.data.imported}</strong> | Skipped (duplicates): <strong>${imp.data.skipped}</strong>`;
+        showToast(`Done! ${imp.data.imported} imported, ${imp.data.skipped} skipped`,'success');
+    } catch(err){
+        const active=['mig-s1','mig-s2','mig-s3','mig-s4','mig-s5'].find(id=>document.getElementById(id)?.className.includes('active'));
+        if(active) migStepSet(active,'error');
+        const res=document.getElementById('mig-result');
+        res.style.display='block'; res.style.background='rgba(248,81,73,.1)'; res.style.border='1px solid rgba(248,81,73,.3)'; res.style.color='var(--accent-red)';
+        res.textContent='❌ '+err.message;
+        document.getElementById('mig-run-btn').disabled=false;
+    }
+}
+function closeMigrationModal(){ document.getElementById('migration-modal').classList.remove('active'); }
+
+// ══════════════════════════════════════════
+//  STATISTICS
+// ══════════════════════════════════════════
+function openStatisticsModal(){
+    document.getElementById('stats-preset').value='all';
+    document.getElementById('stats-from').value=''; document.getElementById('stats-to').value='';
+    document.getElementById('stats-status').value='all';
+    applyStatsFilters();
+    document.getElementById('statistics-modal').classList.add('active');
+}
+function closeStatisticsModal(){ document.getElementById('statistics-modal').classList.remove('active'); }
+function applyDatePreset(){
+    const p=document.getElementById('stats-preset').value; const t=new Date();
+    let from='',to='';
+    if(p==='thisMonth'){from=new Date(t.getFullYear(),t.getMonth(),1).toISOString().split('T')[0];to=t.toISOString().split('T')[0];}
+    else if(p==='lastMonth'){from=new Date(t.getFullYear(),t.getMonth()-1,1).toISOString().split('T')[0];to=new Date(t.getFullYear(),t.getMonth(),0).toISOString().split('T')[0];}
+    else if(p==='thisYear'){from=new Date(t.getFullYear(),0,1).toISOString().split('T')[0];to=t.toISOString().split('T')[0];}
+    document.getElementById('stats-from').value=from; document.getElementById('stats-to').value=to;
+}
+function applyStatsFilters(){
+    const from=document.getElementById('stats-from').value; const to=document.getElementById('stats-to').value; const sf=document.getElementById('stats-status').value;
+    let f=[...jobs];
+    if(from) f=f.filter(j=>new Date(j.created_at)>=new Date(from));
+    if(to)   f=f.filter(j=>new Date(j.created_at)<=new Date(to+'T23:59:59'));
+    if(sf!=='all') f=f.filter(j=>j.status===sf);
+    document.getElementById('stats-summary').innerHTML=[['Total',f.length,'var(--accent-blue)'],['Submitted',f.filter(j=>j.status==='Submitted').length,'var(--accent-blue)'],['In Progress',f.filter(j=>j.status==='In Progress').length,'var(--accent-yellow)'],['Interviewing',f.filter(j=>j.status==='Interviewing').length,'var(--accent-green)'],['Rejected',f.filter(j=>j.status==='Rejected').length,'var(--accent-red)'],['Closed',f.filter(j=>j.status==='Closed').length,'var(--text-muted)']].map(([l,v,c])=>`<div class="stat-card"><div class="stat-value" style="color:${c};">${v}</div><div class="stat-label">${l}</div></div>`).join('');
+    document.getElementById('stats-count').textContent=f.length;
+    f.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    document.getElementById('stats-tbody').innerHTML=f.length?f.map(j=>`<tr style="border-bottom:1px solid var(--border-color);"><td style="padding:.75rem;">${esc(j.company)}</td><td style="padding:.75rem;">${esc(j.title)}</td><td style="padding:.75rem;">${new Date(j.created_at).toLocaleDateString()}</td><td style="padding:.75rem;"><span class="status-badge status-${j.status.toLowerCase().replace(' ','-')}">${j.status}</span></td></tr>`).join(''):'<tr><td colspan="4" style="padding:2rem;text-align:center;color:var(--text-secondary);">No results</td></tr>';
+    window._statsJobs=f;
+}
+function downloadStatsPDF(){
+    const f=window._statsJobs||[];
+    if(!f.length){showToast('No data','error');return;}
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Job Applications</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#333;}h1{color:#667eea;border-bottom:2px solid #667eea;padding-bottom:10px;margin-bottom:20px;}table{width:100%;border-collapse:collapse;}th{background:#667eea;color:white;padding:10px;text-align:left;}td{padding:10px;border-bottom:1px solid #eee;}tr:nth-child(even){background:#f8f8f8;}.badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:.8rem;}.status-submitted{background:#dbeafe;color:#1d4ed8;}.status-in-progress{background:#fef3c7;color:#d97706;}.status-interviewing{background:#dcfce7;color:#16a34a;}.status-rejected{background:#fee2e2;color:#dc2626;}.status-closed{background:#f3f4f6;color:#6b7280;}</style></head><body><h1>Job Applications</h1><p>Generated: ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} | Total: ${f.length}</p><table><thead><tr><th>Company</th><th>Position</th><th>Date</th><th>Status</th></tr></thead><tbody>${f.map(j=>`<tr><td>${esc(j.company)}</td><td>${esc(j.title)}</td><td>${new Date(j.created_at).toLocaleDateString()}</td><td><span class="badge status-${j.status.toLowerCase().replace(' ','-')}">${j.status}</span></td></tr>`).join('')}</tbody></table></body></html>`;
+    const w=window.open('','_blank'); if(w){w.document.write(html);w.document.close();showToast('Use Ctrl+P to save as PDF','success');}
+    else showToast('Pop-up blocked','error');
+}
+
+// ══════════════════════════════════════════
+//  SHUTDOWN
+// ══════════════════════════════════════════
+async function shutdownServer(){
+    if(!confirm('Shutdown the server?\n\nThe app will stop and the window can be closed.')) return;
+    showToast('Shutting down...','info');
+    fetch(API_BASE,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'shutdown'})}).catch(()=>{});
+    setTimeout(()=>{
+        window.close();
+        setTimeout(()=>{ document.body.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#0d1117;color:#f0f6fc;font-family:sans-serif;gap:1rem;"><h1>Server Stopped</h1><p style="color:#8b949e;">You can close this tab.</p><p style="color:#8b949e;">Run <code style="background:#21262d;padding:.25rem .5rem;border-radius:4px;">Start Job Tracker.bat</code> to restart.</p></div>`; },200);
+    },500);
+}
+
+// ══════════════════════════════════════════
+//  MODAL HELPERS
+// ══════════════════════════════════════════
+function openJobModal(){
+    document.getElementById('job-modal-title').textContent='New Job Application';
+    document.getElementById('job-id').value='';
+    ['company-name','job-title','job-url','company-website'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('app-status').value='Submitted';
+    document.getElementById('interview-round').value='';
+    document.getElementById('application-date').value=new Date().toISOString().split('T')[0];
+    currentContacts=[]; currentDocuments=[]; currentCommunications=[];
+    renderContacts(); renderDocuments(); renderCommunications();
+    document.getElementById('job-modal').classList.add('active');
+}
+function closeJobModal(){ document.getElementById('job-modal').classList.remove('active'); }
+function closeViewJobModal(){ document.getElementById('view-job-modal').classList.remove('active'); }
+function openResumeModal(){ document.getElementById('resume-modal').classList.add('active'); }
+function closeResumeModal(){ document.getElementById('resume-modal').classList.remove('active'); }
+
+document.addEventListener('keydown',e=>{
+    if(e.key!=='Escape') return;
+    const priority=['communication-modal','contact-modal','ai-modal','all-contacts-modal','statistics-modal','config-modal','resume-modal','migration-modal','view-job-modal','job-modal'];
+    for(const id of priority){ const el=document.getElementById(id); if(el&&el.classList.contains('active')){el.classList.remove('active');break;} }
+});
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+    o.addEventListener('click',e=>{ if(e.target!==o) return; if(o.id==='job-modal') return; o.classList.remove('active'); });
+});
+
+// ══════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════
+function showToast(msg,type='info'){
+    const c=document.getElementById('toast-container');
+    const t=document.createElement('div'); t.className=`toast ${type}`; t.innerHTML=`<span>${msg}</span>`;
+    c.appendChild(t); setTimeout(()=>{t.style.animation='slideIn .3s ease reverse';setTimeout(()=>t.remove(),300);},4000);
+}
+function esc(text){ if(!text) return ''; const d=document.createElement('div'); d.textContent=text; return d.innerHTML; }
+function togglePw(inputId,btn){
+    const inp=document.getElementById(inputId); const svg=btn.querySelector('svg');
+    if(inp.type==='password'){ inp.type='text'; svg.innerHTML=`<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`; }
+    else { inp.type='password'; svg.innerHTML=`<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`; }
+}
+function pwIconInline(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`; }
+
+document.head.insertAdjacentHTML('beforeend',`<style>.job-detail-section{margin-bottom:1.5rem;}.job-detail-section h3{font-size:.875rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;}</style>`);
+</script>
+
+<?php
+function pwIcon() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+?>
+</body>
+</html>

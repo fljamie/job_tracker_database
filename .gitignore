@@ -1,0 +1,27 @@
+# User data — never commit personal application data
+data/jobtracker.json
+data/jobtracker_new.json
+data/jobtracker_*.json
+data/*.json
+data/cacert.pem
+
+# Keep the data directory itself (via placeholder)
+!data/.gitkeep
+
+# PHP logs
+*.log
+php_errors.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Shutdown flag
+.shutdown_flag
