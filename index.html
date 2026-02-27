@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker v2.04</title>
+    <title>Job Application Tracker v2.05</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -17,24 +17,60 @@
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6;}
 
-        /* ── DB SELECTOR ── */
-        #db-selector-screen{position:fixed;inset:0;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:2rem;}
-        .selector-logo{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:.5rem;}
-        .selector-sub{color:var(--text-secondary);margin-bottom:3rem;font-size:.95rem;}
-        .selector-cards{display:flex;gap:1.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:2rem;}
-        .selector-card{background:var(--bg-card);border:2px solid var(--border-color);border-radius:16px;padding:2rem;width:280px;cursor:pointer;transition:all .2s;text-align:center;}
-        .selector-card:hover,.selector-card.selected{border-color:var(--accent-blue);transform:translateY(-4px);box-shadow:var(--shadow-glow);background:rgba(88,166,255,.08);}
-        .selector-card-icon{font-size:3rem;margin-bottom:1rem;}
-        .selector-card h3{font-size:1.25rem;margin-bottom:.5rem;}
-        .selector-card p{font-size:.85rem;color:var(--text-secondary);}
-        .selector-badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.7rem;font-weight:700;margin-top:.75rem;text-transform:uppercase;letter-spacing:.05em;}
-        .badge-mysql{background:rgba(63,185,80,.15);color:var(--accent-green);}
-        .badge-sqlite{background:rgba(88,166,255,.15);color:var(--accent-blue);}
-        .selector-form{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;width:100%;max-width:560px;margin-top:1rem;display:none;}
-        .selector-form.visible{display:block;}
-        .selector-form h4{margin-bottom:1rem;color:var(--accent-blue);}
-        .selector-form-actions{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.25rem;}
+        /* ── WIZARD ── */
+        #setup-wizard{position:fixed;inset:0;background:var(--bg-primary);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9999;padding:2rem;overflow-y:auto;}
+        .wizard-header{text-align:center;margin-bottom:2rem;padding-top:1rem;}
+        .wizard-logo{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:.25rem;}
+        .wizard-tagline{color:var(--text-secondary);font-size:.95rem;}
+        .wizard-steps{display:flex;align-items:center;gap:.5rem;margin-bottom:2.5rem;}
+        .wstep{display:flex;align-items:center;gap:.5rem;}
+        .wstep-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;transition:all .3s;flex-shrink:0;}
+        .wstep-num.done{background:var(--accent-green);color:#fff;}
+        .wstep-num.active{background:var(--gradient-1);color:#fff;box-shadow:0 0 12px rgba(88,166,255,.4);}
+        .wstep-num.pending{background:var(--bg-tertiary);color:var(--text-muted);border:1px solid var(--border-color);}
+        .wstep-label{font-size:.8rem;font-weight:600;transition:all .3s;}
+        .wstep-label.active{color:var(--text-primary);}
+        .wstep-label.pending{color:var(--text-muted);}
+        .wstep-label.done{color:var(--accent-green);}
+        .wstep-divider{width:40px;height:2px;background:var(--border-color);border-radius:2px;}
+        .wstep-divider.done{background:var(--accent-green);}
+        .wizard-panel{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:2rem;width:100%;max-width:720px;margin-bottom:1.5rem;}
+        .wizard-panel-title{font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem;}
+        .wizard-actions{display:flex;gap:.75rem;justify-content:space-between;width:100%;max-width:720px;margin-bottom:2rem;}
+        /* DB mode cards inside wizard */
+        .db-mode-cards{display:flex;gap:1rem;margin-bottom:1.5rem;}
+        .db-mode-card{flex:1;background:var(--bg-tertiary);border:2px solid var(--border-color);border-radius:12px;padding:1.25rem;cursor:pointer;transition:all .2s;text-align:center;}
+        .db-mode-card:hover{border-color:var(--accent-blue);transform:translateY(-3px);}
+        .db-mode-card.selected{border-color:var(--accent-blue);background:rgba(88,166,255,.08);transform:translateY(-3px);box-shadow:0 0 20px rgba(88,166,255,.15);}
+        .db-mode-card-icon{font-size:2rem;margin-bottom:.5rem;}
+        .db-mode-card h4{font-size:.95rem;margin-bottom:.25rem;}
+        .db-mode-card p{font-size:.75rem;color:var(--text-secondary);}
+        /* Connection fields */
+        .db-fields{display:none;border-top:1px solid var(--border-color);padding-top:1.25rem;margin-top:1.25rem;}
+        .db-fields.visible{display:block;}
         .selector-msg{padding:.75rem 1rem;border-radius:8px;font-size:.875rem;margin-bottom:1rem;display:none;}
+        /* AI provider cards inside wizard */
+        .ai-provider-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;margin-bottom:1.25rem;}
+        @media(max-width:600px){.ai-provider-grid{grid-template-columns:repeat(2,1fr);}}
+        .ai-provider-card{background:var(--bg-tertiary);border:2px solid var(--border-color);border-radius:12px;padding:1rem;cursor:pointer;transition:all .2s;text-align:center;position:relative;}
+        .ai-provider-card:hover{transform:translateY(-3px);}
+        .ai-provider-card.selected{transform:translateY(-3px);}
+        .ai-provider-card .provider-icon{font-size:1.75rem;margin-bottom:.35rem;}
+        .ai-provider-card h4{font-size:.8rem;font-weight:700;margin-bottom:.15rem;}
+        .ai-provider-card p{font-size:.65rem;color:var(--text-secondary);}
+        .ai-provider-card .provider-badge{position:absolute;top:.35rem;right:.35rem;font-size:.55rem;padding:.1rem .35rem;border-radius:8px;font-weight:700;text-transform:uppercase;}
+        .provider-anthropic.selected{border-color:#a371f7;background:rgba(163,113,247,.1);}
+        .provider-anthropic:hover{border-color:#a371f7;}
+        .provider-openai.selected{border-color:#10a37f;background:rgba(16,163,127,.1);}
+        .provider-openai:hover{border-color:#10a37f;}
+        .provider-gemini.selected{border-color:#4285f4;background:rgba(66,133,244,.1);}
+        .provider-gemini:hover{border-color:#4285f4;}
+        .provider-grok.selected{border-color:#e7e7e7;background:rgba(231,231,231,.08);}
+        .provider-grok:hover{border-color:#e7e7e7;}
+        .provider-manual.selected{border-color:var(--accent-yellow);background:rgba(210,153,34,.1);}
+        .provider-manual:hover{border-color:var(--accent-yellow);}
+        .ai-key-panel{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;margin-top:1rem;display:none;}
+        .ai-key-panel.visible{display:block;}
 
         /* ── HEADER ── */
         .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:1rem 2rem;position:sticky;top:0;z-index:100;}
@@ -210,54 +246,139 @@
 </head>
 <body>
 
-<!-- ══════════════ DB SELECTOR ══════════════ -->
-<div id="db-selector-screen">
-    <div class="selector-logo">Job Application Tracker</div>
-    <div class="selector-sub">v2.04 — Choose your database mode to get started</div>
-    <div class="selector-cards">
-        <div class="selector-card" id="card-mysql" onclick="selectMode('mysql')">
-            <div class="selector-card-icon">🗄️</div>
-            <h3>MySQL</h3>
-            <p>Connect to an existing MySQL server. Best for shared or team use.</p>
-            <div class="selector-badge badge-mysql">Shared / Team</div>
+<!-- ══════════════ SETUP WIZARD ══════════════ -->
+<div id="setup-wizard">
+
+    <!-- Logo -->
+    <div class="wizard-header">
+        <div class="wizard-logo">Job Application Tracker</div>
+        <div class="wizard-tagline">v2.05 — Let’s get you set up</div>
+    </div>
+
+    <!-- Step indicators -->
+    <div class="wizard-steps">
+        <div class="wstep">
+            <div class="wstep-num active" id="wnum-1">1</div>
+            <div class="wstep-label active" id="wlabel-1">Database</div>
         </div>
-        <div class="selector-card" id="card-local" onclick="selectMode('local')">
-            <div class="selector-card-icon">📦</div>
-            <h3>Local File</h3>
-            <p>Self-contained JSON file — no server required. Simple and portable.</p>
-            <div class="selector-badge badge-sqlite">Portable / Offline</div>
+        <div class="wstep-divider" id="wdiv-1"></div>
+        <div class="wstep">
+            <div class="wstep-num pending" id="wnum-2">2</div>
+            <div class="wstep-label pending" id="wlabel-2">AI Features</div>
+        </div>
+        <div class="wstep-divider" id="wdiv-2"></div>
+        <div class="wstep">
+            <div class="wstep-num pending" id="wnum-3">✓</div>
+            <div class="wstep-label pending" id="wlabel-3">Launch</div>
         </div>
     </div>
-    <div class="selector-form" id="mysql-form">
-        <h4>🗄️ MySQL Connection</h4>
-        <div class="form-row">
-            <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="sel-db-host" value="localhost"></div>
-            <div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="sel-db-port" value="3306"></div>
+
+    <!-- ─── STEP 1: Database ─── -->
+    <div class="wizard-panel" id="wizard-step-1">
+        <div class="wizard-panel-title">🗄️ Choose Your Database</div>
+
+        <div class="db-mode-cards">
+            <div class="db-mode-card" id="card-local" onclick="selectMode('local')">
+                <div class="db-mode-card-icon">📦</div>
+                <h4>Local File</h4>
+                <p>Self-contained — no server needed. Best for personal use.</p>
+            </div>
+            <div class="db-mode-card" id="card-mysql" onclick="selectMode('mysql')">
+                <div class="db-mode-card-icon">🗄️</div>
+                <h4>MySQL</h4>
+                <p>External server. Best for shared or team use.</p>
+            </div>
         </div>
-        <div class="form-row">
-            <div class="form-group"><label class="form-label">Database Name</label><input type="text" class="form-input" id="sel-db-name" value="job_tracker"></div>
-            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="sel-db-user" value="root"></div>
+
+        <!-- Local fields -->
+        <div class="db-fields" id="sqlite-fields">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Database Filename</label>
+                <input type="text" class="form-input" id="sel-sqlite-file" value="jobtracker.db">
+                <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Stored in the <code>data/</code> folder next to this app</p>
+            </div>
         </div>
-        <div class="form-group"><label class="form-label">Password</label>
-            <div class="pw-wrap"><input type="password" class="form-input" id="sel-db-pass"><button type="button" class="pw-toggle" onclick="togglePw('sel-db-pass',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+
+        <!-- MySQL fields -->
+        <div class="db-fields" id="mysql-fields">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="sel-db-host" value="localhost"></div>
+                <div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="sel-db-port" value="3306"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Database Name</label><input type="text" class="form-input" id="sel-db-name" value="job_tracker"></div>
+                <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="sel-db-user" value="root"></div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Password</label>
+                <div class="pw-wrap"><input type="password" class="form-input" id="sel-db-pass"><button type="button" class="pw-toggle" onclick="togglePw('sel-db-pass',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+            </div>
         </div>
-        <div class="selector-msg" id="sel-msg"></div>
-        <div class="selector-form-actions">
-            <button class="btn btn-secondary" onclick="testSelectorConn()">Test Connection</button>
-            <button class="btn btn-primary" onclick="connectAndLaunch()">Connect &amp; Launch →</button>
+
+        <div class="selector-msg" id="sel-msg" style="margin-top:1rem;"></div>
+    </div>
+
+    <!-- ─── STEP 2: AI Provider ─── -->
+    <div class="wizard-panel" id="wizard-step-2" style="display:none;">
+        <div class="wizard-panel-title">🤖 AI Interview Prep <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">(optional)</span></div>
+
+        <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1.25rem;">Choose an AI provider for AI-powered interview coaching. You can always change this in Settings later.</p>
+
+        <div class="ai-provider-grid">
+            <div class="ai-provider-card provider-anthropic" onclick="selectAIProvider('anthropic')" id="ai-card-anthropic">
+                <span class="provider-badge" style="background:rgba(163,113,247,.2);color:#a371f7;">Best</span>
+                <div class="provider-icon">🤖</div>
+                <h4>Claude</h4>
+                <p>Anthropic</p>
+            </div>
+            <div class="ai-provider-card provider-openai" onclick="selectAIProvider('openai')" id="ai-card-openai">
+                <div class="provider-icon">💬</div>
+                <h4>ChatGPT</h4>
+                <p>OpenAI</p>
+            </div>
+            <div class="ai-provider-card provider-gemini" onclick="selectAIProvider('gemini')" id="ai-card-gemini">
+                <div class="provider-icon">✨</div>
+                <h4>Gemini</h4>
+                <p>Google</p>
+            </div>
+            <div class="ai-provider-card provider-grok" onclick="selectAIProvider('grok')" id="ai-card-grok">
+                <div class="provider-icon">⚡</div>
+                <h4>Grok</h4>
+                <p>xAI</p>
+            </div>
+            <div class="ai-provider-card provider-manual" onclick="selectAIProvider('manual')" id="ai-card-manual">
+                <div class="provider-icon">📋</div>
+                <h4>Manual</h4>
+                <p>Copy prompt</p>
+            </div>
+        </div>
+
+        <!-- Key entry panel -->
+        <div class="ai-key-panel" id="ai-key-panel">
+            <h4 id="ai-key-panel-title" style="margin-bottom:.75rem;font-size:.9rem;"></h4>
+            <div id="ai-key-input-group">
+                <div class="form-group" style="margin-bottom:.5rem;">
+                    <label class="form-label">API Key</label>
+                    <div class="pw-wrap"><input type="password" class="form-input" id="ai-setup-key" placeholder=""><button type="button" class="pw-toggle" onclick="togglePw('ai-setup-key',this)"><?= pwIcon() ?></button></div>
+                    <p id="ai-key-hint" style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;"></p>
+                </div>
+                <div style="display:flex;gap:.75rem;align-items:center;">
+                    <button class="btn btn-secondary" onclick="testSetupKey()" style="font-size:.8rem;padding:.4rem .9rem;">🔌 Test Key</button>
+                    <span id="ai-setup-test-result" style="font-size:.8rem;"></span>
+                </div>
+            </div>
+            <div id="ai-manual-info" style="display:none;">
+                <p style="color:var(--text-secondary);font-size:.875rem;line-height:1.7;">No API key needed! AI Interview Prep will generate a ready-to-copy prompt you can paste into any AI web interface.</p>
+            </div>
         </div>
     </div>
-    <div class="selector-form" id="sqlite-form">
-        <h4>📦 Local Database</h4>
-        <div class="form-group"><label class="form-label">Database File</label>
-            <input type="text" class="form-input" id="sel-sqlite-file" value="jobtracker.db" placeholder="filename.db">
-            <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Stored in the <code>data/</code> folder next to this app</p>
-        </div>
-        <div class="selector-msg" id="sel-sqlite-msg"></div>
-        <div class="selector-form-actions">
-            <button class="btn btn-primary" onclick="connectAndLaunch()">Launch →</button>
-        </div>
+
+    <!-- Wizard navigation buttons -->
+    <div class="wizard-actions" id="wizard-actions">
+        <button class="btn btn-secondary" id="wizard-back-btn" onclick="wizardBack()" style="visibility:hidden;">← Back</button>
+        <button class="btn btn-primary" id="wizard-next-btn" onclick="wizardNext()">Next: AI Setup →</button>
     </div>
+
 </div>
 
 <!-- ══════════════ MAIN APP ══════════════ -->
@@ -274,7 +395,7 @@
                 Migrate Data
             </button>
         </div>
-        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.04</span></div>
+        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.05</span></div>
         <div class="header-actions">
             <div id="db-mode-indicator" class="db-mode-badge local" onclick="openConfigModal()" title="Database settings">
                 <span id="db-mode-dot">●</span>
@@ -476,22 +597,37 @@
             </div>
         </div>
 
-        <!-- AI API Key -->
+        <!-- AI Provider -->
         <div class="apikey-section">
-            <h3>🤖 AI Interview Prep (Anthropic)</h3>
-            <div class="form-group" style="margin-bottom:.5rem;">
-                <label class="form-label">API Key</label>
-                <div style="display:flex;gap:.5rem;align-items:center;">
-                    <div class="pw-wrap" style="flex:1;"><input type="password" class="form-input" id="cfg-api-key" placeholder="sk-ant-..."><button type="button" class="pw-toggle" onclick="togglePw('cfg-api-key',this)" title="Show/hide"><?= pwIcon() ?></button></div>
-                    <button class="btn btn-danger" onclick="clearApiKey()" style="white-space:nowrap;flex-shrink:0;">🗑 Clear</button>
+            <h3>🤖 AI Interview Prep</h3>
+            <div class="form-group" style="margin-bottom:.75rem;">
+                <label class="form-label">Provider</label>
+                <select class="form-select" id="cfg-ai-provider" onchange="onCfgProviderChange()">
+                    <option value="anthropic">Claude (Anthropic)</option>
+                    <option value="openai">ChatGPT (OpenAI)</option>
+                    <option value="gemini">Gemini (Google)</option>
+                    <option value="grok">Grok (xAI)</option>
+                    <option value="manual">Manual / Copy Prompt</option>
+                </select>
+            </div>
+            <div id="cfg-key-group">
+                <div class="form-group" style="margin-bottom:.5rem;">
+                    <label class="form-label" id="cfg-api-key-label">API Key</label>
+                    <div style="display:flex;gap:.5rem;align-items:center;">
+                        <div class="pw-wrap" style="flex:1;"><input type="password" class="form-input" id="cfg-api-key" placeholder="sk-ant-..."><button type="button" class="pw-toggle" onclick="togglePw('cfg-api-key',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+                        <button class="btn btn-danger" onclick="clearApiKey()" style="white-space:nowrap;flex-shrink:0;">🗑 Clear</button>
+                    </div>
                 </div>
+                <div class="apikey-status" id="apikey-status-indicator"></div>
+                <div style="margin-top:.75rem;display:flex;gap:.5rem;align-items:center;">
+                    <button class="btn btn-secondary" onclick="testApiKey()" id="api-test-btn" style="font-size:.8rem;padding:.4rem .9rem;">🔌 Test Key</button>
+                    <span id="api-test-result" style="font-size:.8rem;"></span>
+                </div>
+                <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.5rem;" id="cfg-key-hint">Key stored in browser only.</p>
             </div>
-            <div class="apikey-status" id="apikey-status-indicator"></div>
-            <div style="margin-top:.75rem;display:flex;gap:.5rem;align-items:center;">
-                <button class="btn btn-secondary" onclick="testApiKey()" id="api-test-btn" style="font-size:.8rem;padding:.4rem .9rem;">🔌 Test API Key</button>
-                <span id="api-test-result" style="font-size:.8rem;"></span>
+            <div id="cfg-manual-info" style="display:none;padding:.75rem;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);border-radius:8px;">
+                <p style="font-size:.85rem;color:var(--text-secondary);">Manual mode: AI Interview Prep will generate a prompt you can copy &amp; paste into any AI tool. No API key needed.</p>
             </div>
-            <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.5rem;">Key is stored in your browser only. Get one at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent-purple);">console.anthropic.com</a></p>
         </div>
 
         <!-- Reset / New User -->
@@ -634,17 +770,34 @@ let _cfgMode = 'local';
 
 const API_BASE = 'api.php';
 const CONFIG_KEY = 'jobTrackerConfig_v2';
-const APIKEY_KEY = 'anthropic_api_key';
+const APIKEY_KEY = 'ai_api_key';
+const AI_PROVIDER_KEY = 'ai_provider';
+
+// Provider metadata
+const AI_PROVIDERS = {
+    anthropic: { name:'Claude (Anthropic)', placeholder:'sk-ant-api03-...', hint:'Get a key at console.anthropic.com', link:'https://console.anthropic.com/', models:['claude-haiku-4-5-20251001','claude-haiku-3-5-20241022','claude-3-5-haiku-20241022','claude-3-haiku-20240307'] },
+    openai:    { name:'ChatGPT (OpenAI)',   placeholder:'sk-proj-...',       hint:'Get a key at platform.openai.com',    link:'https://platform.openai.com/api-keys', models:['gpt-4o-mini','gpt-4o'] },
+    gemini:    { name:'Gemini (Google)',    placeholder:'AIzaSy...',          hint:'Get a key at aistudio.google.com',   link:'https://aistudio.google.com/app/apikey', models:['gemini-2.0-flash','gemini-1.5-flash'] },
+    grok:      { name:'Grok (xAI)',         placeholder:'xai-...',            hint:'Get a key at console.x.ai',          link:'https://console.x.ai/', models:['grok-3-mini','grok-3'] },
+    manual:    { name:'Manual / Copy',      placeholder:'',                   hint:'No key needed', link:'', models:[] }
+};
 
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem(CONFIG_KEY);
-    if (saved) {
-        dbConfig = JSON.parse(saved);
-        hideSelectorAndLaunch();
+    const savedCfg  = localStorage.getItem(CONFIG_KEY);
+    const savedAI   = localStorage.getItem(AI_PROVIDER_KEY);
+    if (savedCfg && savedAI) {
+        // Fully configured — skip wizard, go straight to app
+        dbConfig = JSON.parse(savedCfg);
+        launchApp();
+    } else if (savedCfg && !savedAI) {
+        // DB saved but AI not set up — start wizard at step 2
+        dbConfig = JSON.parse(savedCfg);
+        setWizardStep(2);
     }
+    // else: show wizard from step 1 (default)
     setupFileUploads();
 });
 
@@ -664,14 +817,17 @@ async function apiCall(action, data = {}) {
 }
 
 // ══════════════════════════════════════════
-//  DB SELECTOR
+//  SETUP WIZARD
 // ══════════════════════════════════════════
+let _wizardStep = 1;
+let _selectedAIProvider = null;
+
 function selectMode(mode) {
     selectedMode = mode;
     document.getElementById('card-mysql').classList.toggle('selected', mode==='mysql');
     document.getElementById('card-local').classList.toggle('selected', mode==='local');
-    document.getElementById('mysql-form').classList.toggle('visible', mode==='mysql');
-    document.getElementById('sqlite-form').classList.toggle('visible', mode==='local');
+    document.getElementById('mysql-fields').classList.toggle('visible', mode==='mysql');
+    document.getElementById('sqlite-fields').classList.toggle('visible', mode==='local');
 }
 
 function buildSelConfig() {
@@ -685,36 +841,6 @@ function buildSelConfig() {
     return { mode:'local', filename: document.getElementById('sel-sqlite-file').value || 'jobtracker.db' };
 }
 
-async function testSelectorConn() {
-    const cfg = buildSelConfig();
-    const el = document.getElementById('sel-msg');
-    showSelMsg(el, 'Testing...', 'info');
-    const r = await apiCall('testMysqlConnection', { config:cfg });
-    showSelMsg(el, r.success ? '✓ Connection successful!' : '✗ '+(r.error||'Failed'), r.success?'success':'error');
-}
-
-async function connectAndLaunch() {
-    if (!selectedMode) { showToast('Choose a database mode first','error'); return; }
-    const cfg = buildSelConfig();
-    const r = await apiCall('checkConnection', { config:cfg });
-    if (r.success) {
-        dbConfig = cfg;
-        localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
-        hideSelectorAndLaunch();
-    } else {
-        // May need init (new local file or new MySQL DB)
-        const init = await apiCall('initDatabase', { config:cfg });
-        if (init.success) {
-            dbConfig = cfg;
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
-            hideSelectorAndLaunch();
-            return;
-        }
-        const el = document.getElementById(selectedMode==='mysql'?'sel-msg':'sel-sqlite-msg');
-        showSelMsg(el, '✗ '+(r.error||'Connection failed'), 'error');
-    }
-}
-
 function showSelMsg(el, text, type) {
     el.style.display = 'block';
     const colors = { info:['rgba(88,166,255,.1)','var(--accent-blue)'], success:['rgba(63,185,80,.1)','var(--accent-green)'], error:['rgba(248,81,73,.1)','var(--accent-red)'] };
@@ -722,11 +848,119 @@ function showSelMsg(el, text, type) {
     el.textContent = text;
 }
 
-function hideSelectorAndLaunch() {
-    document.getElementById('db-selector-screen').style.display = 'none';
+function setWizardStep(n) {
+    _wizardStep = n;
+    // Show/hide panels
+    document.getElementById('wizard-step-1').style.display = n===1 ? 'block' : 'none';
+    document.getElementById('wizard-step-2').style.display = n===2 ? 'block' : 'none';
+    // Update step indicators
+    for (let i=1; i<=3; i++) {
+        const num   = document.getElementById(`wnum-${i}`);
+        const label = document.getElementById(`wlabel-${i}`);
+        const state = i < n ? 'done' : i === n ? 'active' : 'pending';
+        num.className   = 'wstep-num '   + state;
+        label.className = 'wstep-label ' + state;
+        if (i < n && i<=2) { num.textContent = '✓'; }
+        else if (i <= 2)   { num.textContent = String(i); }
+        // dividers
+        const div = document.getElementById(`wdiv-${i}`);
+        if (div) div.className = 'wstep-divider' + (i < n ? ' done' : '');
+    }
+    // Back button
+    document.getElementById('wizard-back-btn').style.visibility = n > 1 ? 'visible' : 'hidden';
+    // Next button label
+    const nextBtn = document.getElementById('wizard-next-btn');
+    if (n === 1) { nextBtn.textContent = 'Next: AI Setup →'; }
+    if (n === 2) { nextBtn.textContent = 'Launch App →'; }
+}
+
+async function wizardNext() {
+    if (_wizardStep === 1) {
+        // Validate & connect DB
+        if (!selectedMode) { showToast('Choose a database mode first','error'); return; }
+        const nextBtn = document.getElementById('wizard-next-btn');
+        nextBtn.disabled = true; nextBtn.textContent = 'Connecting...';
+        const cfg = buildSelConfig();
+        let ok = false;
+        const r = await apiCall('checkConnection', { config:cfg });
+        if (r.success) {
+            ok = true;
+        } else {
+            const init = await apiCall('initDatabase', { config:cfg });
+            if (init.success) ok = true;
+            else showSelMsg(document.getElementById('sel-msg'), '✗ '+(r.error||'Connection failed'), 'error');
+        }
+        nextBtn.disabled = false;
+        if (!ok) { nextBtn.textContent = 'Next: AI Setup →'; return; }
+        dbConfig = cfg;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
+        setWizardStep(2);
+    } else if (_wizardStep === 2) {
+        // Save AI provider (skip = manual)
+        const provider = _selectedAIProvider || 'manual';
+        localStorage.setItem(AI_PROVIDER_KEY, provider);
+        const key = (document.getElementById('ai-setup-key')?.value||'').trim();
+        if (key) localStorage.setItem(APIKEY_KEY, key);
+        launchApp();
+    }
+}
+
+function wizardBack() {
+    if (_wizardStep > 1) setWizardStep(_wizardStep - 1);
+}
+
+function launchApp() {
+    document.getElementById('setup-wizard').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     updateDbBadge();
     loadJobs(); loadResume();
+}
+
+function selectAIProvider(provider) {
+    _selectedAIProvider = provider;
+    Object.keys(AI_PROVIDERS).forEach(p => {
+        document.getElementById('ai-card-'+p)?.classList.toggle('selected', p === provider);
+    });
+    const panel      = document.getElementById('ai-key-panel');
+    const keyGroup   = document.getElementById('ai-key-input-group');
+    const manualInfo = document.getElementById('ai-manual-info');
+    const keyInput   = document.getElementById('ai-setup-key');
+    const hint       = document.getElementById('ai-key-hint');
+    const title      = document.getElementById('ai-key-panel-title');
+    const result     = document.getElementById('ai-setup-test-result');
+    panel.classList.add('visible');
+    result.textContent = '';
+    if (provider === 'manual') {
+        keyGroup.style.display   = 'none';
+        manualInfo.style.display = 'block';
+        title.textContent        = '📋 Manual / Copy Prompt Mode';
+    } else {
+        const meta = AI_PROVIDERS[provider];
+        keyGroup.style.display   = 'block';
+        manualInfo.style.display = 'none';
+        title.textContent        = `🔑 ${meta.name} API Key`;
+        keyInput.placeholder     = meta.placeholder;
+        hint.innerHTML           = meta.link
+            ? `${meta.hint} — <a href="${meta.link}" target="_blank" style="color:var(--accent-blue);">${meta.link.replace('https://','')}</a>`
+            : meta.hint;
+    }
+}
+
+async function testSetupKey() {
+    const key = (document.getElementById('ai-setup-key').value||'').trim();
+    const res = document.getElementById('ai-setup-test-result');
+    if (!key) { res.style.color='var(--accent-red)'; res.textContent='Enter a key first'; return; }
+    res.style.color='var(--text-secondary)'; res.textContent='Testing...';
+    const models = AI_PROVIDERS[_selectedAIProvider]?.models || [];
+    let worked=false, workingModel='', lastErr='';
+    for (const model of models) {
+        const r = await apiCall('aiProxy', { apiKey:key, payload:{ model, max_tokens:5, messages:[{role:'user',content:'Say OK'}] }});
+        if (r.success) { worked=true; workingModel=model; break; }
+        lastErr = r.error||'Unknown';
+        if (lastErr.match(/401|auth|invalid.*key|api.key/i)) break;
+    }
+    res.style.color = worked ? 'var(--accent-green)' : 'var(--accent-red)';
+    res.textContent = worked ? `✓ Connected! (${workingModel})` : '✗ ' + lastErr;
 }
 
 function updateDbBadge() {
@@ -965,57 +1199,83 @@ function getApiKey() { return localStorage.getItem(APIKEY_KEY)||''; }
 function saveApiKey(k) { if(k) localStorage.setItem(APIKEY_KEY,k.trim()); }
 function clearApiKeyFn() { localStorage.removeItem(APIKEY_KEY); }
 
+function buildPromptText(job) {
+    const contacts = safeJson(job.contacts,[]);
+    return `You are an expert career coach. Give me a comprehensive interview preparation guide:\n\nCompany: ${job.company}\nPosition: ${job.title}\n${job.company_website?'Company Website: '+job.company_website:''}\n${job.url?'Job Posting: '+job.url:''}\nInterview Round: ${job.interview_round||'Not specified'}\n${contacts.length>0?'Contacts: '+contacts.map(c=>`${c.name} (${c.role}${c.title?', '+c.title:''})`).join(', '):''}\n\nPlease cover:\n1. Company overview & recent news\n2. Role analysis and key requirements\n3. Interview strategy for this round\n4. 5 smart questions to ask them\n5. STAR story angles for this role\n6. A compelling "tell me about yourself" opening hook\n7. Contact intelligence for each person listed`;
+}
+
+function openManualPromptModal(jobId) {
+    const job = jobs.find(j=>j.id===jobId); if(!job) return;
+    const prompt = buildPromptText(job);
+    const providerLinks = [
+        {name:'ChatGPT', url:'https://chat.openai.com/', icon:'💬'},
+        {name:'Claude',  url:'https://claude.ai/',       icon:'🤖'},
+        {name:'Gemini',  url:'https://gemini.google.com/', icon:'✨'},
+        {name:'Grok',    url:'https://grok.x.com/',      icon:'⚡'},
+    ];
+    document.getElementById('ai-modal-body').innerHTML = `
+        <div style="padding:1rem 0;">
+            <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:.875rem;">Copy the prompt below and paste it into any AI tool:</p>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                ${providerLinks.map(p=>`<a href="${p.url}" target="_blank" class="btn btn-secondary" style="font-size:.8rem;text-decoration:none;">${p.icon} ${p.name}</a>`).join('')}
+            </div>
+            <textarea readonly class="form-textarea" style="min-height:320px;font-size:.8rem;font-family:monospace;color:var(--text-secondary);">${esc(prompt)}</textarea>
+            <button class="btn btn-primary" style="margin-top:.75rem;" onclick="navigator.clipboard.writeText(${JSON.stringify(prompt)}).then(()=>showToast('Prompt copied!','success'))">📋 Copy Prompt</button>
+        </div>`;
+    document.getElementById('ai-modal-footer').style.display='flex';
+}
+
 async function openAIPrep() {
     const job = jobs.find(j=>j.id===currentJobId); if(!job) return;
     document.getElementById('ai-modal').classList.add('active');
     document.getElementById('ai-modal-footer').style.display='none';
     document.getElementById('ai-save-btn').style.display='none';
 
-    const apiKey = getApiKey();
-    if (!apiKey) {
+    const provider = localStorage.getItem(AI_PROVIDER_KEY)||'manual';
+    const apiKey   = getApiKey();
+
+    // Manual mode: show copy prompt screen immediately
+    if (provider==='manual' || !apiKey) {
+        const meta = AI_PROVIDERS[provider]||{};
+        const needKey = provider !== 'manual' && !apiKey;
         document.getElementById('ai-modal-body').innerHTML = `
             <div style="padding:2rem;">
                 <div style="text-align:center;margin-bottom:2rem;">
-                    <div style="font-size:3rem;margin-bottom:1rem;">🤖</div>
-                    <h3 style="margin-bottom:.5rem;">AI Interview Prep</h3>
-                    <p style="color:var(--text-secondary);font-size:.875rem;">Enter an Anthropic API key for AI-powered research, or use the ChatGPT prompt builder for free.</p>
+                    <div style="font-size:3rem;margin-bottom:1rem;">${provider==='manual'?'📋':'🔑'}</div>
+                    <h3 style="margin-bottom:.5rem;">${needKey ? 'API Key Required' : 'Manual Prompt Mode'}</h3>
+                    <p style="color:var(--text-secondary);font-size:.875rem;">${needKey ? `You haven’t set an API key for ${meta.name||provider} yet.` : 'Copy the prompt and paste it into any AI tool.'}</p>
                 </div>
+                ${needKey ? `
                 <div class="form-group">
-                    <label class="form-label">Anthropic API Key (optional)</label>
-                    <div class="pw-wrap"><input type="password" class="form-input" id="temp-api-key" placeholder="sk-ant-..."><button type="button" class="pw-toggle" onclick="togglePw('temp-api-key',this)">${pwIconInline()}</button></div>
-                    <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Get one free at <a href="https://console.anthropic.com/" target="_blank" style="color:var(--accent-blue);">console.anthropic.com</a> · Stored in browser only.</p>
+                    <label class="form-label">${meta.name||provider} API Key</label>
+                    <div class="pw-wrap"><input type="password" class="form-input" id="temp-api-key" placeholder="${meta.placeholder||''}"><button type="button" class="pw-toggle" onclick="togglePw('temp-api-key',this)">${pwIconInline()}</button></div>
+                    ${meta.link?`<p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Get one at <a href="${meta.link}" target="_blank" style="color:var(--accent-blue);">${meta.link.replace('https://','')}</a></p>`:''}
                 </div>
-                <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+                <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;">
                     <button class="btn btn-secondary" onclick="closeAIModal()">Cancel</button>
-                    <button class="btn btn-chatgpt" onclick="openChatGPTPrompt(${job.id})">🤖 Open in ChatGPT (no key needed)</button>
-                    <button class="btn btn-primary" onclick="saveKeyAndStartAI()">Save Key &amp; Start →</button>
-                </div>
+                    <button class="btn btn-secondary" onclick="openManualPromptModal(${job.id})">Use Manual Prompt Instead</button>
+                    <button class="btn btn-primary" onclick="saveTempKeyAndStart()">Save Key &amp; Start →</button>
+                </div>` : `
+                <button class="btn btn-primary" onclick="openManualPromptModal(${job.id})" style="width:100%;">View &amp; Copy Prompt →</button>
+                <p style="text-align:center;margin-top:1rem;font-size:.8rem;color:var(--text-muted);">Or <a href="#" onclick="openConfigModal();closeAIModal();" style="color:var(--accent-blue);">set up an API key in Settings</a></p>`}
             </div>`;
         document.getElementById('ai-modal-footer').style.display='flex';
         return;
     }
-    startAIResearch(job, apiKey);
+    startAIResearch(job, apiKey, provider);
 }
 
-function openChatGPTPrompt(jobId) {
-    const job = jobs.find(j=>j.id===jobId); if(!job) return;
-    const contacts = safeJson(job.contacts,[]);
-    const prompt = `You are an expert career coach. Please give me a comprehensive interview preparation guide for this job application:\n\nCompany: ${job.company}\nPosition: ${job.title}\n${job.company_website ? 'Company Website: '+job.company_website : ''}\n${job.url ? 'Job Posting: '+job.url : ''}\nInterview Round: ${job.interview_round || 'Not specified'}\n${contacts.length>0 ? 'Contacts: '+contacts.map(c=>`${c.name} (${c.role}${c.title?', '+c.title:''})`).join(', ') : ''}\n\nPlease cover:\n1. Company overview & recent news\n2. Role analysis and key requirements\n3. Interview strategy for this round\n4. 5 smart questions to ask them\n5. STAR story angles for this role\n6. A compelling "tell me about yourself" opening hook\n7. Contact intelligence for each person listed`;
-    const chatgptUrl = 'https://chat.openai.com/?q=' + encodeURIComponent(prompt);
-    window.open(chatgptUrl, '_blank');
-    showToast('Prompt sent to ChatGPT!', 'success');
-}
-
-async function saveKeyAndStartAI() {
+async function saveTempKeyAndStart() {
     const k = (document.getElementById('temp-api-key')?.value||'').trim();
-    if (!k) { showToast('Enter an API key or use ChatGPT option','error'); return; }
-    if (!k.startsWith('sk-ant-')) { showToast('Invalid key — should start with sk-ant-','error'); return; }
+    if (!k) { showToast('Enter your API key','error'); return; }
     saveApiKey(k);
     const job = jobs.find(j=>j.id===currentJobId);
-    if (job) startAIResearch(job, k);
+    const provider = localStorage.getItem(AI_PROVIDER_KEY)||'anthropic';
+    if (job) startAIResearch(job, k, provider);
 }
 
-async function startAIResearch(job, apiKey) {
+async function startAIResearch(job, apiKey, provider) {
+    provider = provider || localStorage.getItem(AI_PROVIDER_KEY) || 'anthropic';
     const steps = [
         {id:'s1',text:'Researching company background...'},
         {id:'s2',text:'Analyzing role & requirements...'},
@@ -1049,13 +1309,8 @@ async function startAIResearch(job, apiKey) {
 
         setStep('s1','active');
 
-        // Try models in order from newest to most compatible
-        const modelsToTry = [
-            'claude-haiku-4-5-20251001',
-            'claude-haiku-3-5-20241022',
-            'claude-3-5-haiku-20241022',
-            'claude-3-haiku-20240307'
-        ];
+        // Try models for the active provider
+        const modelsToTry = AI_PROVIDERS[provider]?.models || ['claude-haiku-4-5-20251001'];
         let result = { success: false, error: 'No models available' };
         for (const model of modelsToTry) {
             result = await apiCall('aiProxy', {
@@ -1105,7 +1360,7 @@ async function startAIResearch(job, apiKey) {
                 <p style="color:var(--text-secondary);font-size:.875rem;">${esc(err.message)}</p>
                 <p style="color:var(--text-muted);font-size:.8rem;margin-top:.75rem;">${helpText}</p>
                 <div style="margin-top:1.5rem;">
-                    <button class="btn btn-chatgpt" onclick="openChatGPTPrompt(${currentJobId})">🤖 Use ChatGPT Instead</button>
+                    <button class="btn btn-secondary" onclick="openManualPromptModal(${currentJobId})">📋 Use Manual Prompt Instead</button>
                 </div>
             </div>`;
         document.getElementById('ai-modal-footer').style.display='flex';
@@ -1399,14 +1654,35 @@ function openConfigModal(){
     } else {
         document.getElementById('cfg-sqlite-file').value=dbConfig?.filename||'jobtracker.db';
     }
+    // AI provider section
+    const provider = localStorage.getItem(AI_PROVIDER_KEY)||'anthropic';
+    document.getElementById('cfg-ai-provider').value = provider;
+    onCfgProviderChange();
     const key=getApiKey();
     document.getElementById('cfg-api-key').value=key;
     const ind=document.getElementById('apikey-status-indicator');
-    if(key){ ind.className='apikey-status has-key'; ind.textContent='✓ API key is set'; }
-    else { ind.className='apikey-status no-key'; ind.textContent='No API key — AI features will prompt you'; }
+    if(key){ ind.className='apikey-status has-key'; ind.textContent=`✓ Key set (${AI_PROVIDERS[provider]?.name||provider})`; }
+    else if(provider==='manual'){ ind.className='apikey-status no-key'; ind.textContent='Manual mode — no key needed'; }
+    else { ind.className='apikey-status no-key'; ind.textContent='No key — AI prep will ask for one'; }
+    document.getElementById('api-test-result').textContent='';
     document.getElementById('config-conn-status').className='connection-status connected';
     document.getElementById('config-conn-text').textContent=`Connected (${mode==='mysql'?'MySQL':'Local JSON'})`;
     document.getElementById('config-modal').classList.add('active');
+}
+
+function onCfgProviderChange(){
+    const provider = document.getElementById('cfg-ai-provider').value;
+    const meta = AI_PROVIDERS[provider]||{};
+    const isManual = provider==='manual';
+    document.getElementById('cfg-key-group').style.display   = isManual?'none':'block';
+    document.getElementById('cfg-manual-info').style.display = isManual?'block':'none';
+    if(!isManual){
+        document.getElementById('cfg-api-key').placeholder = meta.placeholder||'';
+        const hint = document.getElementById('cfg-key-hint');
+        hint.innerHTML = meta.link
+            ? `${meta.hint} — <a href="${meta.link}" target="_blank" style="color:var(--accent-blue);">${meta.link.replace('https://','')}</a>`
+            : (meta.hint||'Key stored in browser only.');
+    }
 }
 
 function switchCfgMode(mode){
@@ -1434,6 +1710,8 @@ async function testCfgConn(){
 }
 
 async function saveCfgAndReload(){
+    const provider = document.getElementById('cfg-ai-provider').value;
+    localStorage.setItem(AI_PROVIDER_KEY, provider);
     const key=(document.getElementById('cfg-api-key').value||'').trim();
     if(key) saveApiKey(key);
     const cfg=buildCfgConfig();
@@ -1465,42 +1743,36 @@ function clearApiKey(){
 async function testApiKey(){
     const keyInField = (document.getElementById('cfg-api-key').value||'').trim();
     const key = keyInField || getApiKey();
+    const provider = document.getElementById('cfg-ai-provider')?.value || localStorage.getItem(AI_PROVIDER_KEY) || 'anthropic';
     const resultEl = document.getElementById('api-test-result');
     const btn = document.getElementById('api-test-btn');
 
     if(!key){ resultEl.style.color='var(--accent-red)'; resultEl.textContent='No key entered'; return; }
-    if(!key.startsWith('sk-ant-') && !key.startsWith('sk-')){ resultEl.style.color='var(--accent-red)'; resultEl.textContent='Key format looks wrong (should start with sk-ant-)'; return; }
 
     btn.disabled=true; btn.textContent='Testing...';
     resultEl.style.color='var(--text-secondary)'; resultEl.textContent='Sending test request...';
-
-    // Save the key first so apiCall can use it
     if(keyInField) saveApiKey(keyInField);
 
-    // Try a minimal API call — just a 1-token ping
-    const models = ['claude-haiku-4-5-20251001','claude-haiku-3-5-20241022','claude-3-5-haiku-20241022','claude-3-haiku-20240307'];
-    let lastErr = '';
-    let worked = false;
-    let workingModel = '';
+    const models = AI_PROVIDERS[provider]?.models || ['claude-haiku-4-5-20251001'];
+    let lastErr='', worked=false, workingModel='';
     for(const model of models){
-        const r = await apiCall('aiProxy',{ apiKey: key, payload:{ model, max_tokens:5, messages:[{role:'user',content:'Say OK'}] }});
+        const r = await apiCall('aiProxy',{ apiKey:key, payload:{ model, max_tokens:5, messages:[{role:'user',content:'Say OK'}] }});
         if(r.success){ worked=true; workingModel=model; break; }
         lastErr = r.error||'Unknown error';
-        // Stop if it's an auth error — no point trying other models
         if(lastErr.match(/401|auth|invalid.*key|api.key/i)) break;
     }
 
-    btn.disabled=false; btn.textContent='🔌 Test API Key';
+    btn.disabled=false; btn.textContent='🔌 Test Key';
     if(worked){
         resultEl.style.color='var(--accent-green)';
-        resultEl.textContent='✓ Connected! Using '+workingModel;
+        resultEl.textContent=`✓ Connected! (${workingModel})`;
         const ind=document.getElementById('apikey-status-indicator');
-        ind.className='apikey-status has-key'; ind.textContent='✓ API key is set and working';
-        showToast('API key works!','success');
+        ind.className='apikey-status has-key'; ind.textContent=`✓ ${AI_PROVIDERS[provider]?.name} key working`;
+        showToast('Key works!','success');
     } else {
         resultEl.style.color='var(--accent-red)';
         resultEl.textContent='✗ '+lastErr;
-        showToast('API test failed: '+lastErr,'error');
+        showToast('Test failed: '+lastErr,'error');
     }
 }
 

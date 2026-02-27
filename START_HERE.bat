@@ -1,207 +1,128 @@
 @echo off
-setlocal EnableDelayedExpansion
 title Job Application Tracker - Setup & Launch
 color 0A
+cd /d "%~dp0"
 
-echo.
-echo  ================================================
-echo    Job Application Tracker v2.04
-echo    Starting setup check...
-echo  ================================================
-echo.
-
-set SCRIPT_DIR=%~dp0
-if "%SCRIPT_DIR:~-1%"=="\" set SCRIPT_DIR=%SCRIPT_DIR:~0,-1%
 set PORT=8013
-set PHP_OK=0
-set CURL_OK=0
-set WINGET_OK=0
+set PHP_EXE=
 
-rem ── Check if already running ─────────────────────────────────────────────
-netstat -an 2>nul | findstr ":%PORT% " | findstr "LISTENING" >nul
-if %errorlevel% equ 0 (
-    echo  [OK] Server already running - opening browser...
+echo.
+echo  =====================================================
+echo    Job Application Tracker v2.06
+echo  =====================================================
+echo.
+
+REM Already running?
+netstat -an 2>nul | findstr ":%PORT% " | findstr "LISTENING" >nul 2>&1
+if not errorlevel 1 (
+    echo  [INFO] Server already running. Opening browser...
     start http://127.0.0.1:%PORT%
     exit /b 0
 )
 
-rem ── Check PHP ─────────────────────────────────────────────────────────────
-echo  Checking requirements...
-echo.
-where php >nul 2>nul
-if %errorlevel% equ 0 (
-    set PHP_OK=1
-    for /f "tokens=2 delims= " %%v in ('php -v 2^>nul ^| findstr /R "^PHP"') do (
-        echo  [OK] PHP %%v found
-    )
-) else (
-    echo  [MISSING] PHP is not installed or not in PATH
-    set PHP_OK=0
-)
+REM Find PHP
+echo  Searching for PHP...
 
-rem ── Check cURL extension ──────────────────────────────────────────────────
-if %PHP_OK%==1 (
-    php -r "echo extension_loaded('curl') ? 'OK' : 'MISSING';" 2>nul | findstr "OK" >nul
-    if %errorlevel% equ 0 (
-        set CURL_OK=1
-        echo  [OK] PHP cURL extension enabled
-    ) else (
-        echo  [WARNING] PHP cURL extension not enabled
-        set CURL_OK=0
+where php >nul 2>&1
+if not errorlevel 1 (
+    for /f "usebackq tokens=*" %%P in (`where php`) do (
+        set PHP_EXE=%%P
+        goto :found_php
     )
 )
 
+if exist "C:\php\php.exe"                       ( set PHP_EXE=C:\php\php.exe                       & goto :found_php )
+if exist "C:\php8\php.exe"                      ( set PHP_EXE=C:\php8\php.exe                      & goto :found_php )
+if exist "%LOCALAPPDATA%\Programs\PHP\php.exe"  ( set PHP_EXE=%LOCALAPPDATA%\Programs\PHP\php.exe  & goto :found_php )
+if exist "%PROGRAMFILES%\PHP\php.exe"           ( set PHP_EXE=%PROGRAMFILES%\PHP\php.exe           & goto :found_php )
+
+goto :install_php
+
+:found_php
+echo  [OK] PHP: %PHP_EXE%
+echo.
+goto :enable_curl
+
+:install_php
+echo  [!!] PHP not found - attempting auto-install...
 echo.
 
-rem ── All good - just launch ────────────────────────────────────────────────
-if %PHP_OK%==1 (
-    if %CURL_OK%==1 (
-        goto :LAUNCH
+where winget >nul 2>&1
+if not errorlevel 1 (
+    echo  Trying winget...
+    winget install PHP.PHP --silent --accept-source-agreements --accept-package-agreements >nul 2>&1
+    timeout /t 3 /nobreak >nul
+    where php >nul 2>&1
+    if not errorlevel 1 (
+        for /f "usebackq tokens=*" %%P in (`where php`) do set PHP_EXE=%%P
+        echo  [OK] PHP installed via winget.
+        echo.
+        goto :enable_curl
     )
 )
 
-rem ── Something missing - offer to fix ─────────────────────────────────────
-echo  ================================================
-echo    Some requirements need attention
-echo  ================================================
-echo.
+echo  Downloading PHP 8 from windows.php.net (approx 30MB)...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; try { [Net.ServicePointManager]::SecurityProtocol='Tls12'; $page=Invoke-WebRequest -Uri 'https://windows.php.net/download/' -UseBasicParsing; $href=($page.Links | Where-Object { $_.href -match 'php-8.*-nts-Win32-vs16-x64\.zip' } | Select-Object -First 1).href; if(!$href){throw 'No link'}; if($href -notmatch '^http'){$href='https://windows.php.net'+$href}; Invoke-WebRequest -Uri $href -OutFile ""$env:TEMP\php_dl.zip""; if(!(Test-Path 'C:\php')){New-Item -Type Directory 'C:\php'|Out-Null}; Expand-Archive -Path ""$env:TEMP\php_dl.zip"" -DestinationPath 'C:\php' -Force; Remove-Item ""$env:TEMP\php_dl.zip"" -ErrorAction SilentlyContinue; Write-Host 'DONE' } catch { Write-Host ('FAIL: '+$_.Exception.Message) }"
 
-if %PHP_OK%==0 (
-    echo  PHP is required to run this application.
+if exist "C:\php\php.exe" (
+    set PHP_EXE=C:\php\php.exe
+    echo  [OK] PHP extracted to C:\php
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[Environment]::GetEnvironmentVariable('PATH','User'); if($p -notlike '*C:\php*'){[Environment]::SetEnvironmentVariable('PATH',$p+';C:\php','User')}" >nul 2>&1
     echo.
-    echo  Install options:
-    echo    [1] Auto-install PHP using winget  (Windows 11, recommended^)
-    echo    [2] Download PHP manually          (all Windows versions^)
-    echo    [3] Exit
-    echo.
-    set /p CHOICE="  Choose an option (1/2/3): "
-
-    if "!CHOICE!"=="1" goto :INSTALL_WINGET
-    if "!CHOICE!"=="2" goto :INSTALL_MANUAL
-    if "!CHOICE!"=="3" exit /b 0
-    goto :INSTALL_MANUAL
+    goto :enable_curl
 )
 
-if %CURL_OK%==0 (
-    echo  PHP is installed but the cURL extension is not enabled.
-    echo  This is needed for the AI features.
-    echo.
-    echo    [1] Show me how to enable it
-    echo    [2] Continue without AI features (cURL not required for basic use^)
-    echo    [3] Exit
-    echo.
-    set /p CHOICE="  Choose an option (1/2/3): "
-    if "!CHOICE!"=="1" goto :FIX_CURL
-    if "!CHOICE!"=="2" goto :LAUNCH
-    if "!CHOICE!"=="3" exit /b 0
-    goto :LAUNCH
-)
-
-rem ── Auto-install via winget ───────────────────────────────────────────────
-:INSTALL_WINGET
 echo.
-echo  Checking for winget (Windows Package Manager)...
-where winget >nul 2>nul
-if %errorlevel% neq 0 (
-    echo  [NOT FOUND] winget is not available on this system.
-    echo  Please use option 2 to download PHP manually.
-    echo.
-    pause
-    goto :INSTALL_MANUAL
-)
-
-echo  [OK] winget found - installing PHP...
+echo  =====================================================
+echo    PHP AUTO-INSTALL FAILED
+echo  =====================================================
 echo.
-echo  Running: winget install PHP.PHP
-echo  This may take a minute, please wait...
-echo.
-winget install PHP.PHP --accept-source-agreements --accept-package-agreements
-if %errorlevel% equ 0 (
-    echo.
-    echo  [OK] PHP installed successfully!
-    echo.
-    echo  IMPORTANT: Please close this window and run START_HERE.bat again.
-    echo  (Windows needs to refresh the PATH before PHP is accessible^)
-    echo.
-    pause
-    exit /b 0
-) else (
-    echo.
-    echo  [ERROR] winget install failed. Falling back to manual download.
-    goto :INSTALL_MANUAL
-)
-
-rem ── Manual download instructions ──────────────────────────────────────────
-:INSTALL_MANUAL
-echo.
-echo  ================================================
-echo    Manual PHP Installation
-echo  ================================================
-echo.
-echo  1. A browser window will open to the PHP download page
-echo  2. Download "VS16 x64 Thread Safe" ZIP
-echo  3. Extract it to C:\php
-echo  4. Copy php.ini-development to php.ini in that folder
-echo  5. Open php.ini and uncomment these lines (remove the semicolon^):
-echo.
-echo       extension_dir = "ext"
-echo       extension=curl
-echo       extension=mbstring
-echo       extension=openssl
-echo.
-echo  6. Add C:\php to your system PATH:
-echo     - Search "environment variables" in Start menu
-echo     - Click "Environment Variables"
-echo     - Edit "Path" under System Variables
-echo     - Add: C:\php
-echo.
-echo  7. Close this window and run START_HERE.bat again
+echo  Please install PHP manually:
+echo    1. Go to: https://windows.php.net/download/
+echo    2. Download VS16 x64 Non Thread Safe ZIP
+echo    3. Extract to C:\php
+echo    4. Copy php.ini-development to php.ini there
+echo    5. Enable extensions in php.ini (remove semicolons):
+echo         extension_dir = "ext"
+echo         extension=curl
+echo         extension=mbstring
+echo         extension=openssl
+echo    6. Add C:\php to your system PATH
+echo    7. Run this file again
 echo.
 start https://windows.php.net/download/
-echo  Opening https://windows.php.net/download/ in your browser...
-echo.
 pause
-exit /b 0
+exit /b 1
 
-rem ── Fix cURL instructions ─────────────────────────────────────────────────
-:FIX_CURL
-echo.
-echo  To enable cURL in PHP:
-echo.
-echo  1. Find your php.ini file by running:  php --ini
-echo  2. Open that file in Notepad
-echo  3. Find the line:  ;extension=curl
-echo  4. Remove the semicolon so it reads:  extension=curl
-echo  5. Save the file
-echo  6. Close this window and run START_HERE.bat again
-echo.
-for /f "tokens=*" %%i in ('php --ini 2^>nul ^| findstr "Loaded"') do echo  Your php.ini: %%i
-echo.
-pause
-goto :LAUNCH
+:enable_curl
+"%PHP_EXE%" -r "echo extension_loaded('curl') ? 'CURL_OK' : 'MISS';" 2>nul | findstr "CURL_OK" >nul 2>&1
+if not errorlevel 1 (
+    echo  [OK] cURL extension active
+    echo.
+    goto :launch
+)
 
-rem ── Launch the server ─────────────────────────────────────────────────────
-:LAUNCH
-echo.
-echo  ================================================
-echo    Launching Job Application Tracker
-echo  ================================================
-echo.
-echo  Server: http://127.0.0.1:%PORT%
-echo  Browser opens automatically in 2 seconds.
-echo  Close this window or use the in-app Shutdown button to stop.
-echo  ================================================
+echo  [..] Enabling cURL extension in php.ini...
+for /f "usebackq tokens=*" %%F in (`"%PHP_EXE%" -r "echo php_ini_loaded_file();" 2^>nul`) do set PHP_INI=%%F
+
+if not "%PHP_INI%"=="" if exist "%PHP_INI%" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$f='%PHP_INI%'; $c=Get-Content $f; $c=$c -replace '^;(extension_dir = .ext.)','$1'; $c=$c -replace '^;(extension=curl\b)','$1'; $c=$c -replace '^;(extension=mbstring)','$1'; $c=$c -replace '^;(extension=openssl)','$1'; $c|Set-Content $f" >nul 2>&1
+    echo  [OK] php.ini updated.
+) else (
+    echo  [WARN] Could not find php.ini. AI features may not work.
+)
 echo.
 
-if exist "%SCRIPT_DIR%\.shutdown_flag" del "%SCRIPT_DIR%\.shutdown_flag" >nul 2>&1
+:launch
+echo  =====================================================
+echo    Starting: http://127.0.0.1:%PORT%
+echo    Close this window to stop the server.
+echo  =====================================================
+echo.
 
 start "" /b cmd /c "timeout /t 2 /nobreak >nul && start http://127.0.0.1:%PORT%"
-php -S 127.0.0.1:%PORT% -t "%SCRIPT_DIR%"
 
-if exist "%SCRIPT_DIR%\.shutdown_flag" (
-    del "%SCRIPT_DIR%\.shutdown_flag" >nul 2>&1
-    exit /b 0
-)
+"%PHP_EXE%" -S 127.0.0.1:%PORT% -t "%~dp0"
 
 echo.
 echo  Server stopped. Press any key to close...

@@ -1,6 +1,6 @@
 <?php
 /**
- * Job Application Tracker API  v2.04
+ * Job Application Tracker API  v2.05
  * - Suppresses PHP deprecation warnings so they don't break JSON output
  * - Uses flat JSON files for "local" mode (no SQLite extension needed)
  * - curl_close() removed (deprecated in PHP 8.5)
@@ -494,7 +494,7 @@ function importData($c, $data) {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-//  AI PROXY  — calls Anthropic API server-side
+//  AI PROXY  — multi-provider: Anthropic, OpenAI, Gemini, Grok
 // ═════════════════════════════════════════════════════════════════════════════
 
 function aiProxy($apiKey, $payload) {
@@ -504,43 +504,137 @@ function aiProxy($apiKey, $payload) {
         return;
     }
 
-    // SSL cert bundle: download once to the data folder, point cURL to it
+    // Detect provider from API key format
+    $provider = 'anthropic';
+    if (strpos($apiKey, 'sk-ant-') === 0)          $provider = 'anthropic';
+    elseif (strpos($apiKey, 'xai-') === 0)         $provider = 'grok';
+    elseif (strpos($apiKey, 'AIza') === 0)         $provider = 'gemini';
+    elseif (strpos($apiKey, 'sk-') === 0)          $provider = 'openai';
+
+    // Provider configs
+    $configs = [
+        'anthropic' => [
+            'url'     => 'https://api.anthropic.com/v1/messages',
+            'headers' => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: 2023-06-01'
+            ],
+            'response_type' => 'anthropic',
+        ],
+        'openai' => [
+            'url'     => 'https://api.openai.com/v1/chat/completions',
+            'headers' => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+            ],
+            'response_type' => 'openai',
+        ],
+        'gemini' => [
+            'url'     => 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+            'headers' => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+            ],
+            'response_type' => 'openai',
+        ],
+        'grok' => [
+            'url'     => 'https://api.x.ai/v1/chat/completions',
+            'headers' => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+            ],
+            'response_type' => 'openai',
+        ],
+    ];
+
+    $cfg = $configs[$provider];
+
+    // Normalise payload for OpenAI-compatible providers
+    // Anthropic uses {system, messages, model, max_tokens}
+    // OpenAI-compatible uses {messages (with system role), model, max_tokens}
+    if ($cfg['response_type'] === 'openai') {
+        $oaiPayload = $payload;
+        // Move Anthropic-style system prompt into messages array
+        if (!empty($payload['system']) && is_string($payload['system'])) {
+            $sysMsg = ['role' => 'system', 'content' => $payload['system']];
+            $msgs   = $payload['messages'] ?? [];
+            $oaiPayload['messages'] = array_merge([$sysMsg], $msgs);
+            unset($oaiPayload['system']);
+        }
+        // Map model names if still using Anthropic model strings
+        $modelMap = [
+            'claude-haiku-4-5-20251001' => [
+                'openai' => 'gpt-4o-mini',
+                'gemini' => 'gemini-2.0-flash',
+                'grok'   => 'grok-3-mini',
+            ],
+            'claude-haiku-3-5-20241022' => [
+                'openai' => 'gpt-4o-mini',
+                'gemini' => 'gemini-2.0-flash',
+                'grok'   => 'grok-3-mini',
+            ],
+            'claude-3-5-haiku-20241022' => [
+                'openai' => 'gpt-4o-mini',
+                'gemini' => 'gemini-2.0-flash',
+                'grok'   => 'grok-3-mini',
+            ],
+            'claude-3-haiku-20240307' => [
+                'openai' => 'gpt-4o-mini',
+                'gemini' => 'gemini-1.5-flash',
+                'grok'   => 'grok-3-mini',
+            ],
+        ];
+        $currentModel = $oaiPayload['model'] ?? '';
+        if (isset($modelMap[$currentModel][$provider])) {
+            $oaiPayload['model'] = $modelMap[$currentModel][$provider];
+        }
+        // Remove Anthropic-only fields
+        unset($oaiPayload['tools']);
+        $postData = json_encode($oaiPayload);
+    } else {
+        $postData = json_encode($payload);
+    }
+
+    // SSL cert bundle
     $certPath = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'cacert.pem';
     if (!file_exists($certPath)) {
         $pem = @file_get_contents('https://curl.se/ca/cacert.pem');
         if ($pem) file_put_contents($certPath, $pem);
     }
-
-    $ch = curl_init('https://api.anthropic.com/v1/messages');
     $sslOpts = file_exists($certPath)
         ? [CURLOPT_SSL_VERIFYPEER => true, CURLOPT_CAINFO => $certPath]
         : [CURLOPT_SSL_VERIFYPEER => false];
 
+    $ch = curl_init($cfg['url']);
     curl_setopt_array($ch, $sslOpts + [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode($payload),
-        CURLOPT_HTTPHEADER     => [
-            'Content-Type: application/json',
-            'x-api-key: ' . $apiKey,
-            'anthropic-version: 2023-06-01'
-        ],
+        CURLOPT_POSTFIELDS     => $postData,
+        CURLOPT_HTTPHEADER     => $cfg['headers'],
         CURLOPT_TIMEOUT        => 120,
     ]);
 
     $body     = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlErr  = curl_error($ch);
-    // Note: curl_close() intentionally omitted — deprecated in PHP 8.5, no effect since PHP 8.0
 
     if ($curlErr) { respond(false, null, 'cURL error: ' . $curlErr); return; }
 
     $result = json_decode($body, true);
     if ($httpCode !== 200) {
         $msg = $result['error']['message'] ?? $body;
-        respond(false, null, "Anthropic API error ($httpCode): $msg");
+        respond(false, null, ucfirst($provider) . " API error ($httpCode): $msg");
         return;
     }
+
+    // Normalise response: always return Anthropic-style {content:[{text:...}]}
+    // so the frontend doesn't need to know which provider was used
+    if ($cfg['response_type'] === 'openai') {
+        $text = $result['choices'][0]['message']['content'] ?? '';
+        $result = ['content' => [['type' => 'text', 'text' => $text]]];
+    }
+
     respond(true, $result);
 }
 
