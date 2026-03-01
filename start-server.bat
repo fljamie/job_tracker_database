@@ -54,5 +54,6 @@ if exist "%SCRIPT_DIR%.shutdown_flag" (
 )
 
 echo.
-echo Server stopped. Press any key to close...
-pause >nul
+echo Server stopped. Closing...
+timeout /t 2 /nobreak >nul
+exit

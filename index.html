@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker v2.05</title>
+    <title>Job Application Tracker v2.06</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -292,10 +292,16 @@
 
         <!-- Local fields -->
         <div class="db-fields" id="sqlite-fields">
+            <div class="form-group">
+                <label class="form-label">Data Directory</label>
+                <input type="text" class="form-input" id="sel-sqlite-dir" placeholder="Loading default path...">
+                <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">
+                    Full path where the database file will be saved. Change to any folder you prefer.
+                </p>
+            </div>
             <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Database Filename</label>
                 <input type="text" class="form-input" id="sel-sqlite-file" value="jobtracker.db">
-                <p style="font-size:.75rem;color:var(--text-secondary);margin-top:.4rem;">Stored in the <code>data/</code> folder next to this app</p>
             </div>
         </div>
 
@@ -309,9 +315,13 @@
                 <div class="form-group"><label class="form-label">Database Name</label><input type="text" class="form-input" id="sel-db-name" value="job_tracker"></div>
                 <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="sel-db-user" value="root"></div>
             </div>
-            <div class="form-group" style="margin-bottom:0;">
+            <div class="form-group">
                 <label class="form-label">Password</label>
                 <div class="pw-wrap"><input type="password" class="form-input" id="sel-db-pass"><button type="button" class="pw-toggle" onclick="togglePw('sel-db-pass',this)" title="Show/hide"><?= pwIcon() ?></button></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:.75rem;margin-top:.25rem;">
+                <button class="btn btn-secondary" onclick="testWizardMysqlConn()" style="font-size:.8rem;padding:.45rem 1rem;">🔌 Test Connection</button>
+                <span id="wizard-mysql-test-result" style="font-size:.8rem;"></span>
             </div>
         </div>
 
@@ -395,7 +405,7 @@
                 Migrate Data
             </button>
         </div>
-        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.05</span></div>
+        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.06</span></div>
         <div class="header-actions">
             <div id="db-mode-indicator" class="db-mode-badge local" onclick="openConfigModal()" title="Database settings">
                 <span id="db-mode-dot">●</span>
@@ -799,6 +809,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // else: show wizard from step 1 (default)
     setupFileUploads();
+
+    // Fetch server info to populate default data directory path
+    apiCall('getServerInfo').then(r => {
+        if (r.success && r.data) {
+            const dirField = document.getElementById('sel-sqlite-dir');
+            if (dirField) {
+                dirField.value = r.data.defaultDataDirNative || r.data.defaultDataDir || '';
+                dirField.placeholder = r.data.defaultDataDirNative || 'Enter a folder path';
+            }
+        }
+    }).catch(() => {});
 });
 
 // ══════════════════════════════════════════
@@ -838,7 +859,11 @@ function buildSelConfig() {
         user:document.getElementById('sel-db-user').value,
         password:document.getElementById('sel-db-pass').value
     };
-    return { mode:'local', filename: document.getElementById('sel-sqlite-file').value || 'jobtracker.db' };
+    return {
+        mode:'local',
+        filename: document.getElementById('sel-sqlite-file').value || 'jobtracker.db',
+        dataDir:  (document.getElementById('sel-sqlite-dir')?.value || '').trim()
+    };
 }
 
 function showSelMsg(el, text, type) {
@@ -872,6 +897,22 @@ function setWizardStep(n) {
     const nextBtn = document.getElementById('wizard-next-btn');
     if (n === 1) { nextBtn.textContent = 'Next: AI Setup →'; }
     if (n === 2) { nextBtn.textContent = 'Launch App →'; }
+}
+
+async function testWizardMysqlConn() {
+    if (selectedMode !== 'mysql') return;
+    const cfg = buildSelConfig();
+    const btn = event.target;
+    const result = document.getElementById('wizard-mysql-test-result');
+    btn.disabled = true; btn.textContent = 'Testing...';
+    result.style.color = 'var(--text-secondary)'; result.textContent = 'Connecting...';
+    const r = await apiCall('testMysqlConnection', { config: cfg });
+    btn.disabled = false; btn.textContent = '🔌 Test Connection';
+    if (r.success) {
+        result.style.color = 'var(--accent-green)'; result.textContent = '✓ ' + (r.data?.message || 'Connected!');
+    } else {
+        result.style.color = 'var(--accent-red)'; result.textContent = '✗ ' + (r.error || 'Connection failed');
+    }
 }
 
 async function wizardNext() {
@@ -917,6 +958,12 @@ function launchApp() {
 }
 
 function selectAIProvider(provider) {
+    // Clear the API key whenever provider changes
+    const prevProvider = _selectedAIProvider;
+    if (prevProvider && prevProvider !== provider) {
+        const keyInput = document.getElementById('ai-setup-key');
+        if (keyInput) keyInput.value = '';
+    }
     _selectedAIProvider = provider;
     Object.keys(AI_PROVIDERS).forEach(p => {
         document.getElementById('ai-card-'+p)?.classList.toggle('selected', p === provider);
@@ -939,6 +986,7 @@ function selectAIProvider(provider) {
         keyGroup.style.display   = 'block';
         manualInfo.style.display = 'none';
         title.textContent        = `🔑 ${meta.name} API Key`;
+        keyInput.value           = '';  // clear any previous key
         keyInput.placeholder     = meta.placeholder;
         hint.innerHTML           = meta.link
             ? `${meta.hint} — <a href="${meta.link}" target="_blank" style="color:var(--accent-blue);">${meta.link.replace('https://','')}</a>`
@@ -1674,10 +1722,17 @@ function onCfgProviderChange(){
     const provider = document.getElementById('cfg-ai-provider').value;
     const meta = AI_PROVIDERS[provider]||{};
     const isManual = provider==='manual';
+    // Clear key & test result whenever the provider selection changes
+    document.getElementById('cfg-api-key').value = '';
+    document.getElementById('api-test-result').textContent = '';
+    const ind = document.getElementById('apikey-status-indicator');
+    if (ind) { ind.textContent = ''; ind.className = 'apikey-status no-key'; }
     document.getElementById('cfg-key-group').style.display   = isManual?'none':'block';
     document.getElementById('cfg-manual-info').style.display = isManual?'block':'none';
     if(!isManual){
         document.getElementById('cfg-api-key').placeholder = meta.placeholder||'';
+        const lbl = document.getElementById('cfg-api-key-label');
+        if (lbl) lbl.textContent = 'API Key ' + (meta.placeholder ? '(format: ' + meta.placeholder + ')' : '');
         const hint = document.getElementById('cfg-key-hint');
         hint.innerHTML = meta.link
             ? `${meta.hint} — <a href="${meta.link}" target="_blank" style="color:var(--accent-blue);">${meta.link.replace('https://','')}</a>`
@@ -1969,3 +2024,4 @@ function pwIcon() {
 ?>
 </body>
 </html>
+
