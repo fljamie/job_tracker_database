@@ -173,6 +173,6 @@ REM Run PHP built-in server (blocking - keeps window alive)
 "%PHP_EXE%" -S 127.0.0.1:%PORT% -t "%~dp0"
 
 echo.
-echo  Server stopped.
-echo  Press any key to close this window...
-pause >nul
+echo Server stopped. Closing...
+timeout /t 2 /nobreak >nul
+exit
