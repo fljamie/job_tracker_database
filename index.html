@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker v2.09</title>
+    <title>Job Application Tracker v2.10</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -295,6 +295,20 @@
         @keyframes spin{to{transform:rotate(360deg);}}
         @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
 
+        /* ── DOCS COLUMN BADGE ── */
+        .job-docs-cell{text-align:center;}
+        .docs-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .55rem;border-radius:12px;font-size:.75rem;font-weight:600;background:rgba(88,166,255,.12);color:var(--accent-blue);border:1px solid rgba(88,166,255,.25);cursor:pointer;transition:all .2s;white-space:nowrap;}
+        .docs-badge:hover{background:rgba(88,166,255,.25);border-color:var(--accent-blue);transform:translateY(-1px);}
+        .docs-badge-zero{color:var(--text-muted);font-size:.8rem;}
+        body.light-mode .docs-badge{background:rgba(9,105,218,.1);border-color:rgba(9,105,218,.3);}
+        /* ── DOC LIST IN MODAL ── */
+        .doc-list-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;margin-bottom:.5rem;}
+        .doc-list-item:last-child{margin-bottom:0;}
+        .doc-list-icon{font-size:1.4rem;flex-shrink:0;}
+        .doc-list-name{flex:1;font-size:.875rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);}
+        .doc-list-meta{font-size:.72rem;color:var(--text-muted);flex-shrink:0;white-space:nowrap;}
+        body.light-mode .doc-list-item{background:#f8fafc;}
+
         ::-webkit-scrollbar{width:8px;height:8px;}
         ::-webkit-scrollbar-track{background:var(--bg-primary);}
         ::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px;}
@@ -311,7 +325,7 @@
     <!-- Logo -->
     <div class="wizard-header">
         <div class="wizard-logo">Job Application Tracker</div>
-        <div class="wizard-tagline">v2.09 — Let’s get you set up</div>
+        <div class="wizard-tagline">v2.10 — Let’s get you set up</div>
     </div>
 
     <!-- Step indicators -->
@@ -356,7 +370,7 @@
     </div>
 
     <!-- ─── STEP 2: Database ─── -->
-    <div class="wizard-panel" id="wizard-step-3" style="display:none;">
+    <div class="wizard-panel" id="wizard-step-2" style="display:none;">
         <div class="wizard-panel-title">🗄️ Choose Your Database</div>
 
         <div class="db-mode-cards">
@@ -411,7 +425,7 @@
     </div>
 
     <!-- ─── STEP 2: AI Provider ─── -->
-    <div class="wizard-panel" id="wizard-step-2" style="display:none;">
+    <div class="wizard-panel" id="wizard-step-3" style="display:none;">
         <div class="wizard-panel-title">🤖 AI Interview Prep <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">(optional)</span></div>
 
         <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1.25rem;">Choose an AI provider for AI-powered interview coaching. You can always change this in Settings later.</p>
@@ -491,7 +505,7 @@
                 Add Contact
             </button>
         </div>
-        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.09</span></div>
+        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.10</span></div>
         <div class="header-actions">
             <div id="db-mode-indicator" class="db-mode-badge local" onclick="openConfigModal()" title="Database settings">
                 <span id="db-mode-dot">●</span>
@@ -779,6 +793,21 @@
 </div>
 </div>
 
+<!-- Job Docs Viewer Modal -->
+<div class="modal-overlay" id="job-docs-modal">
+<div class="modal" style="max-width:580px;">
+    <div class="modal-header">
+        <h2 class="modal-title" id="job-docs-modal-title">Documents</h2>
+        <button class="modal-close" onclick="closeJobDocsModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="job-docs-modal-body" style="min-height:80px;"></div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeJobDocsModal()">Close</button>
+        <button class="btn btn-secondary" onclick="editJobFromDocsModal()">&#x270F;&#xFE0F; Edit Job to Manage Files</button>
+    </div>
+</div>
+</div>
+
 <!-- Standalone Contact (from main screen) -->
 <div class="modal-overlay" id="standalone-contact-modal">
 <div class="modal" style="max-width:540px;">
@@ -920,7 +949,7 @@ const GLOBAL_CONTACTS_KEY = 'global_contacts_v1';
 
 // Provider metadata
 const AI_PROVIDERS = {
-    anthropic: { name:'Claude (Anthropic)', placeholder:'sk-ant-api03-...', hint:'Get a key at console.anthropic.com', link:'https://console.anthropic.com/', models:['claude-haiku-4-5-20251001','claude-haiku-3-5-20241022','claude-3-5-haiku-20241022','claude-3-haiku-20240307'] },
+    anthropic: { name:'Claude (Anthropic)', placeholder:'sk-ant-api03-...', hint:'Get a key at console.anthropic.com', link:'https://console.anthropic.com/', models:['claude-haiku-4-5-20251001','claude-3-5-haiku-20241022'] },
     openai:    { name:'ChatGPT (OpenAI)',   placeholder:'sk-proj-...',       hint:'Get a key at platform.openai.com',    link:'https://platform.openai.com/api-keys', models:['gpt-4o-mini','gpt-4o'] },
     gemini:    { name:'Gemini (Google)',    placeholder:'AIzaSy...',          hint:'Get a key at aistudio.google.com',   link:'https://aistudio.google.com/app/apikey', models:['gemini-2.0-flash','gemini-1.5-flash'] },
     grok:      { name:'Grok (xAI)',         placeholder:'xai-...',            hint:'Get a key at console.x.ai',          link:'https://console.x.ai/', models:['grok-3-mini','grok-3'] },
@@ -1247,6 +1276,7 @@ function renderJobs() {
             <th class="sortable" onclick="sortBy('date')">Date ${si('date')}</th>
             <th class="sortable" onclick="sortBy('contacts')">Contacts ${si('contacts')}</th>
             <th class="sortable" onclick="sortBy('comms')">Comms ${si('comms')}</th>
+            <th class="sortable" onclick="sortBy('docs')">Docs ${si('docs')}</th>
             <th class="sortable" onclick="sortBy('status')">Status ${si('status')}</th>
         </tr></thead>
         <tbody>${sorted.map(renderJobRow).join('')}</tbody>
@@ -1261,13 +1291,18 @@ function renderJobRow(job) {
     const sc = job.status.toLowerCase().replace(' ','-');
     const cc = safeJsonLength(job.contacts);
     const mc = safeJsonLength(job.communications);
+    const dc = safeJsonLength(job.documents);
     const fd = fmtDate(job.application_date || (job.created_at||'').split(' ')[0]);
+    const docsCell = dc > 0
+        ? `<span class="docs-badge" onclick="event.stopPropagation();openJobDocsModal(${job.id})" title="${dc} document${dc>1?'s':''}">\uD83D\uDCCE ${dc}</span>`
+        : `<span class="docs-badge-zero">&mdash;</span>`;
     return `<tr class="job-row" onclick="viewJob(${job.id})">
         <td class="job-company-cell">${esc(job.company)}</td>
         <td class="job-title-cell">${esc(job.title)}</td>
         <td class="job-date-cell">${fd}</td>
         <td class="job-contacts-cell">${cc}</td>
         <td class="job-contacts-cell">${mc}</td>
+        <td class="job-docs-cell">${docsCell}</td>
         <td><span class="status-badge status-${sc}">${job.status}</span></td>
     </tr>`;
 }
@@ -1289,6 +1324,7 @@ function sortJobs(list) {
             case 'date':     va=new Date(a.application_date||a.created_at||0); vb=new Date(b.application_date||b.created_at||0); break;
             case 'contacts': va=safeJsonLength(a.contacts); vb=safeJsonLength(b.contacts); break;
             case 'comms':    va=safeJsonLength(a.communications); vb=safeJsonLength(b.communications); break;
+            case 'docs':     va=safeJsonLength(a.documents);      vb=safeJsonLength(b.documents);      break;
             case 'status': { const so=['Submitted','In Progress','Interviewing','Rejected','Closed']; va=so.indexOf(a.status); vb=so.indexOf(b.status); break; }
             default: return 0;
         }
@@ -1300,7 +1336,7 @@ function sortJobs(list) {
 
 function sortBy(col) {
     if(currentSort.column===col) currentSort.direction=currentSort.direction==='asc'?'desc':'asc';
-    else { currentSort.column=col; currentSort.direction=['date','contacts','comms'].includes(col)?'desc':'asc'; }
+    else { currentSort.column=col; currentSort.direction=['date','contacts','comms','docs'].includes(col)?'desc':'asc'; }
     renderJobs();
 }
 
@@ -2228,7 +2264,7 @@ document.addEventListener('keydown',e=>{
 });
 document.querySelectorAll('.modal-overlay').forEach(o=>{
     // Exclude modals where losing unsaved input would be frustrating
-    const noClickDismiss = ['job-modal','contact-modal','communication-modal','standalone-contact-modal'];
+    const noClickDismiss = ['job-modal','contact-modal','communication-modal','standalone-contact-modal','job-docs-modal'];
     o.addEventListener('click',e=>{ if(e.target!==o) return; if(noClickDismiss.includes(o.id)) return; o.classList.remove('active'); });
 });
 
@@ -2338,6 +2374,74 @@ async function deleteGlobalContact(idx) {
     openAllContactsModal(); // refresh the view
 }
 
+
+// ══════════════════════════════════════════
+//  JOB DOCUMENTS MODAL
+// ══════════════════════════════════════════
+let _docsJobId = null;
+
+function openJobDocsModal(jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    _docsJobId = jobId;
+    const docs = safeJson(job.documents, []);
+    document.getElementById('job-docs-modal-title').textContent =
+        '\uD83D\uDCCE ' + job.company + ' \u2014 ' + job.title;
+    const body = document.getElementById('job-docs-modal-body');
+    if (!docs.length) {
+        body.innerHTML = '<p style="color:var(--text-secondary);font-size:.875rem;text-align:center;padding:2rem 0;">No documents attached yet.<br><span style="font-size:.8rem;opacity:.7;">Use \u201cEdit Job\u201d to upload a resume, cover letter, or other files.</span></p>';
+    } else {
+        body.innerHTML = docs.map((d, i) => {
+            const icon = docsFileIcon(d.type, d.name);
+            const kb   = d.data ? Math.round(d.data.length * 0.75 / 1024) : 0;
+            const size = kb > 1024 ? (kb/1024).toFixed(1)+' MB' : kb+' KB';
+            return '<div class="doc-list-item">'
+                + '<span class="doc-list-icon">'+icon+'</span>'
+                + '<span class="doc-list-name" title="'+esc(d.name)+'">'+esc(d.name)+'</span>'
+                + '<span class="doc-list-meta">'+size+'</span>'
+                + '<button class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .65rem;flex-shrink:0;" onclick="downloadJobDoc('+i+','+jobId+')" title="Download">\u2B07 Download</button>'
+                + '</div>';
+        }).join('');
+    }
+    document.getElementById('job-docs-modal').classList.add('active');
+}
+
+function closeJobDocsModal() {
+    document.getElementById('job-docs-modal').classList.remove('active');
+    _docsJobId = null;
+}
+
+function editJobFromDocsModal() {
+    const id = _docsJobId;
+    closeJobDocsModal();
+    setTimeout(() => {
+        const job = jobs.find(j => j.id === id);
+        if (job) editJob(job);
+    }, 150);
+}
+
+function downloadJobDoc(docIdx, jobId) {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    const docs = safeJson(job.documents, []);
+    const doc  = docs[docIdx];
+    if (!doc || !doc.data) { showToast('No data for this file', 'error'); return; }
+    const a = document.createElement('a');
+    a.href = doc.data;
+    a.download = doc.name;
+    a.click();
+}
+
+function docsFileIcon(mimeType, name) {
+    const t = (mimeType || '').toLowerCase();
+    const n = (name    || '').toLowerCase();
+    if (t.includes('pdf')   || n.endsWith('.pdf'))                        return '\uD83D\uDCD5';
+    if (t.includes('word')  || n.endsWith('.docx') || n.endsWith('.doc'))return '\uD83D\uDCD8';
+    if (t.includes('image') || /\.(png|jpg|jpeg|gif|webp)$/.test(n))     return '\uD83D\uDDBC\uFE0F';
+    if (t.includes('text')  || n.endsWith('.txt'))                        return '\uD83D\uDCDD';
+    if (/spreadsheet|excel/.test(t) || /\.(xlsx|xls|csv)$/.test(n))     return '\uD83D\uDCCA';
+    return '\uD83D\uDCCE';
+}
 
 </script>
 
