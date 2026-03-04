@@ -1,10 +1,10 @@
 <?php
 /**
- * Job Application Tracker API  v2.06
+ * Job Application Tracker API  v2.12
  * - Suppresses PHP deprecation warnings so they don't break JSON output
  * - Uses flat JSON files for "local" mode (no SQLite extension needed)
  * - curl_close() removed (deprecated in PHP 8.5)
- * - v2.06: custom data directory support, getServerInfo, testMysqlConnection
+ * - v2.12: logo restored, cover letter generation + DOCX save
  */
 
 error_reporting(E_ERROR | E_PARSE);
