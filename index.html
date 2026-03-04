@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker v2.06</title>
+    <title>Job Application Tracker v2.09</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -14,6 +14,65 @@
             --gradient-1:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
             --shadow-lg:0 25px 50px -12px rgba(0,0,0,.5); --shadow-glow:0 0 40px rgba(88,166,255,.15);
         }
+
+        /* ── LIGHT MODE ── */
+        body.light-mode {
+            --bg-primary:#f0f2f5; --bg-secondary:#ffffff; --bg-tertiary:#e8ecf0; --bg-card:#ffffff;
+            --border-color:#d0d7de; --text-primary:#0d1117; --text-secondary:#444c56; --text-muted:#656d76;
+            --accent-blue:#0969da; --accent-green:#1a7f37; --accent-yellow:#9a6700; --accent-orange:#bc4c00;
+            --accent-red:#cf222e; --accent-purple:#6639ba; --accent-pink:#bf3989;
+            --gradient-1:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            --shadow-lg:0 25px 50px -12px rgba(0,0,0,.15); --shadow-glow:0 0 40px rgba(9,105,218,.12);
+        }
+        body.light-mode .header { box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+        body.light-mode .jobs-table thead { background:#eef1f5; }
+        body.light-mode .job-row:hover { background:#f0f2f5; }
+        body.light-mode .modal { box-shadow:0 20px 60px rgba(0,0,0,.2); }
+        body.light-mode .toast { box-shadow:0 4px 16px rgba(0,0,0,.12); }
+        body.light-mode .stat-card:hover { box-shadow:0 4px 12px rgba(9,105,218,.12); }
+        body.light-mode .btn-primary { color:#fff; }
+        body.light-mode .btn-secondary { background:#ffffff; color:#0d1117; }
+        body.light-mode .btn-secondary:hover { background:#f0f2f5; }
+        body.light-mode .db-mode-card { background:#f8fafc; }
+        body.light-mode .db-mode-card.selected { background:rgba(9,105,218,.06); }
+        body.light-mode .ai-provider-card { background:#f8fafc; }
+        body.light-mode .contact-card { background:#f8fafc; }
+        body.light-mode .config-section { background:#f8fafc; }
+        body.light-mode .ai-result-section { background:#f8fafc; }
+        body.light-mode .apikey-section { background:#f8fafc; }
+        body.light-mode .ai-key-panel { background:#f8fafc; }
+        body.light-mode .form-input,
+        body.light-mode .form-select,
+        body.light-mode .form-textarea { background:#ffffff; color:#0d1117; border-color:#d0d7de; }
+        body.light-mode .form-input:focus,
+        body.light-mode .form-select:focus,
+        body.light-mode .form-textarea:focus { border-color:#0969da; box-shadow:0 0 0 3px rgba(9,105,218,.1); }
+        body.light-mode .file-upload-area { background:#f8fafc; }
+        body.light-mode #setup-wizard { background:#f0f2f5; }
+        body.light-mode .wizard-panel { background:#ffffff; }
+        body.light-mode .round-step { background:#f0f2f5; }
+        body.light-mode .btn-ai { color:#fff; }
+        body.light-mode .btn-chatgpt { color:#fff; }
+        body.light-mode .status-submitted { background:rgba(9,105,218,.1); }
+        body.light-mode .status-in-progress { background:rgba(154,103,0,.1); }
+        body.light-mode .status-interviewing { background:rgba(26,127,55,.1); }
+        body.light-mode .status-rejected { background:rgba(207,34,46,.1); }
+        body.light-mode .status-closed { background:rgba(101,109,118,.1); }
+        body.light-mode .db-mode-badge.mysql { background:rgba(26,127,55,.1); border-color:rgba(26,127,55,.3); }
+        body.light-mode .db-mode-badge.sqlite,
+        body.light-mode .db-mode-badge.local { background:rgba(9,105,218,.1); border-color:rgba(9,105,218,.3); }
+        body.light-mode ::-webkit-scrollbar-track { background:#f0f2f5; }
+        body.light-mode ::-webkit-scrollbar-thumb { background:#c8cdd4; }
+
+        /* ── THEME TOGGLE BUTTON ── */
+        .theme-toggle {
+            width:36px; height:36px; border-radius:8px;
+            background:var(--bg-tertiary); border:1px solid var(--border-color);
+            color:var(--text-secondary); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            transition:all .2s; font-size:1rem; flex-shrink:0;
+        }
+        .theme-toggle:hover { color:var(--accent-yellow); border-color:var(--accent-yellow); }
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6;}
 
@@ -252,29 +311,52 @@
     <!-- Logo -->
     <div class="wizard-header">
         <div class="wizard-logo">Job Application Tracker</div>
-        <div class="wizard-tagline">v2.06 — Let’s get you set up</div>
+        <div class="wizard-tagline">v2.09 — Let’s get you set up</div>
     </div>
 
     <!-- Step indicators -->
     <div class="wizard-steps">
         <div class="wstep">
             <div class="wstep-num active" id="wnum-1">1</div>
-            <div class="wstep-label active" id="wlabel-1">Database</div>
+            <div class="wstep-label active" id="wlabel-1">Deployment</div>
         </div>
         <div class="wstep-divider" id="wdiv-1"></div>
         <div class="wstep">
             <div class="wstep-num pending" id="wnum-2">2</div>
-            <div class="wstep-label pending" id="wlabel-2">AI Features</div>
+            <div class="wstep-label pending" id="wlabel-2">Database</div>
         </div>
         <div class="wstep-divider" id="wdiv-2"></div>
         <div class="wstep">
-            <div class="wstep-num pending" id="wnum-3">✓</div>
-            <div class="wstep-label pending" id="wlabel-3">Launch</div>
+            <div class="wstep-num pending" id="wnum-3">3</div>
+            <div class="wstep-label pending" id="wlabel-3">AI Features</div>
+        </div>
+        <div class="wstep-divider" id="wdiv-3"></div>
+        <div class="wstep">
+            <div class="wstep-num pending" id="wnum-4">✓</div>
+            <div class="wstep-label pending" id="wlabel-4">Launch</div>
         </div>
     </div>
 
-    <!-- ─── STEP 1: Database ─── -->
+    <!-- ─── STEP 1: Deployment Type ─── -->
     <div class="wizard-panel" id="wizard-step-1">
+        <div class="wizard-panel-title">🚀 How will you run this app?</div>
+        <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:1.25rem;">This affects which features are shown and how your settings are saved.</p>
+        <div class="db-mode-cards">
+            <div class="db-mode-card" id="card-portable" onclick="selectDeployMode('portable')">
+                <div class="db-mode-card-icon">💻</div>
+                <h4>Portable / Local</h4>
+                <p>Runs on this PC. Single user. Includes a shutdown button to stop the PHP server.</p>
+            </div>
+            <div class="db-mode-card" id="card-webserver" onclick="selectDeployMode('webserver')">
+                <div class="db-mode-card-icon">🖥️</div>
+                <h4>Web Server</h4>
+                <p>Hosted on nginx/Apache (e.g. Ubuntu). Multi-device. Settings saved server-side — no shutdown button.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── STEP 2: Database ─── -->
+    <div class="wizard-panel" id="wizard-step-3" style="display:none;">
         <div class="wizard-panel-title">🗄️ Choose Your Database</div>
 
         <div class="db-mode-cards">
@@ -404,8 +486,12 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                 Migrate Data
             </button>
+            <button class="btn btn-secondary" onclick="openStandaloneContactModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+                Add Contact
+            </button>
         </div>
-        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.06</span></div>
+        <div class="logo">Job Application Tracking <span style="font-size:.7rem;opacity:.6;">v2.09</span></div>
         <div class="header-actions">
             <div id="db-mode-indicator" class="db-mode-badge local" onclick="openConfigModal()" title="Database settings">
                 <span id="db-mode-dot">●</span>
@@ -419,10 +505,11 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 New Application
             </button>
+            <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
             <button class="btn-icon" onclick="openConfigModal()" title="Settings">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9z"/></svg>
             </button>
-            <button class="btn-icon" onclick="shutdownServer()" title="Shutdown Server" style="color:var(--accent-red);">
+            <button class="btn-icon" id="shutdown-btn" onclick="shutdownServer()" title="Shutdown Server" style="color:var(--accent-red);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
             </button>
         </div>
@@ -640,6 +727,16 @@
             </div>
         </div>
 
+        <!-- Deployment Mode -->
+        <div class="config-section">
+            <h3>🚀 Deployment Mode</h3>
+            <div style="display:flex;gap:.75rem;margin-bottom:.75rem;">
+                <button class="btn btn-secondary" id="cfg-deploy-portable"  onclick="setCfgDeployMode('portable')"  style="flex:1;">💻 Portable / Local</button>
+                <button class="btn btn-secondary" id="cfg-deploy-webserver" onclick="setCfgDeployMode('webserver')" style="flex:1;">🖥️ Web Server</button>
+            </div>
+            <p style="font-size:.75rem;color:var(--text-secondary);">Web Server mode hides the shutdown button and saves settings server-side so every device shares the same config.</p>
+        </div>
+
         <!-- Reset / New User -->
         <div class="config-section" style="border-color:rgba(248,81,73,.3);">
             <h3 style="color:var(--accent-red);">🔄 Reset Connection (Test as New User)</h3>
@@ -678,7 +775,42 @@
 <div class="modal" style="max-width:900px;">
     <div class="modal-header"><h2 class="modal-title">All Contacts</h2><button class="modal-close" onclick="closeAllContactsModal()">✕</button></div>
     <div class="modal-body" id="all-contacts-body"></div>
-    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeAllContactsModal()">Close</button></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="openStandaloneContactModal()">+ Add Contact</button><button class="btn btn-secondary" onclick="closeAllContactsModal()">Close</button></div>
+</div>
+</div>
+
+<!-- Standalone Contact (from main screen) -->
+<div class="modal-overlay" id="standalone-contact-modal">
+<div class="modal" style="max-width:540px;">
+    <div class="modal-header"><h2 class="modal-title">Add Contact</h2><button class="modal-close" onclick="closeStandaloneContactModal()">✕</button></div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">Company</label>
+            <select class="form-select" id="sc-company-select" onchange="onScCompanySelect()">
+                <option value="">— select or type below —</option>
+            </select>
+            <input type="text" class="form-input" id="sc-company-text" placeholder="Or type a company name..." style="margin-top:.5rem;">
+        </div>
+        <div class="form-group"><label class="form-label">Contact Name *</label><input type="text" class="form-input" id="sc-name"></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="sc-title"></div>
+            <div class="form-group"><label class="form-label">Role</label>
+                <select class="form-select" id="sc-role">
+                    <option>Recruiter</option><option>HR</option><option>Hiring Manager</option><option>Executive</option><option>Product Specialist</option><option>Individual Contributor</option><option>Other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">LinkedIn URL</label><input type="url" class="form-input" id="sc-linkedin" placeholder="https://linkedin.com/in/..."></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="sc-email"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" id="sc-phone"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="sc-notes" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeStandaloneContactModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveStandaloneContact()">Save Contact</button>
+    </div>
 </div>
 </div>
 
@@ -769,6 +901,7 @@
 //  GLOBAL STATE
 // ══════════════════════════════════════════
 let jobs = [], currentContacts = [], currentDocuments = [], currentCommunications = [];
+let globalContacts = [];  // contacts not tied to a specific job
 let currentJobId = null, currentResume = null, dbConfig = null;
 let editContactIdx = -1, editCommIdx = -1;
 let currentFilter = 'all';
@@ -777,11 +910,13 @@ let selectedMode = null;
 let migSrcMode = null, migDstMode = null;
 let _aiResultText = '', _aiResultHTML = '';
 let _cfgMode = 'local';
+let deployMode = 'portable'; // 'portable' | 'webserver'
 
 const API_BASE = 'api.php';
 const CONFIG_KEY = 'jobTrackerConfig_v2';
 const APIKEY_KEY = 'ai_api_key';
 const AI_PROVIDER_KEY = 'ai_provider';
+const GLOBAL_CONTACTS_KEY = 'global_contacts_v1';
 
 // Provider metadata
 const AI_PROVIDERS = {
@@ -795,22 +930,41 @@ const AI_PROVIDERS = {
 // ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-    const savedCfg  = localStorage.getItem(CONFIG_KEY);
-    const savedAI   = localStorage.getItem(AI_PROVIDER_KEY);
+document.addEventListener('DOMContentLoaded', async () => {
+    setupFileUploads();
+
+    // ── Try server-side config first (web server / multi-device mode) ──
+    // If api.php has a saved app_config.json, every device shares it.
+    try {
+        const srvCfg = await apiCall('getAppConfig');
+        if (srvCfg.success && srvCfg.data?.complete) {
+            const sc = srvCfg.data;
+            deployMode = sc.deployMode || 'portable';
+            dbConfig   = sc.dbConfig;
+            if (sc.aiProvider) localStorage.setItem(AI_PROVIDER_KEY, sc.aiProvider);
+            if (sc.aiApiKey)   localStorage.setItem(APIKEY_KEY, sc.aiApiKey);
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
+            launchApp();
+            return;
+        }
+    } catch(e) {}
+
+    // ── Fall back to localStorage (portable mode) ──
+    const savedCfg = localStorage.getItem(CONFIG_KEY);
+    const savedAI  = localStorage.getItem(AI_PROVIDER_KEY);
+    const savedDeploy = localStorage.getItem('deployMode');
+    if (savedDeploy) deployMode = savedDeploy;
+
     if (savedCfg && savedAI) {
-        // Fully configured — skip wizard, go straight to app
         dbConfig = JSON.parse(savedCfg);
         launchApp();
     } else if (savedCfg && !savedAI) {
-        // DB saved but AI not set up — start wizard at step 2
         dbConfig = JSON.parse(savedCfg);
-        setWizardStep(2);
+        setWizardStep(3); // DB set but AI step needed
     }
-    // else: show wizard from step 1 (default)
-    setupFileUploads();
+    // else: show wizard from step 1
 
-    // Fetch server info to populate default data directory path
+    // Populate default data directory
     apiCall('getServerInfo').then(r => {
         if (r.success && r.data) {
             const dirField = document.getElementById('sel-sqlite-dir');
@@ -842,6 +996,13 @@ async function apiCall(action, data = {}) {
 // ══════════════════════════════════════════
 let _wizardStep = 1;
 let _selectedAIProvider = null;
+let _deployModeSelected = null;
+
+function selectDeployMode(mode) {
+    _deployModeSelected = mode;
+    document.getElementById('card-portable').classList.toggle('selected',  mode==='portable');
+    document.getElementById('card-webserver').classList.toggle('selected', mode==='webserver');
+}
 
 function selectMode(mode) {
     selectedMode = mode;
@@ -875,28 +1036,29 @@ function showSelMsg(el, text, type) {
 
 function setWizardStep(n) {
     _wizardStep = n;
-    // Show/hide panels
-    document.getElementById('wizard-step-1').style.display = n===1 ? 'block' : 'none';
-    document.getElementById('wizard-step-2').style.display = n===2 ? 'block' : 'none';
-    // Update step indicators
-    for (let i=1; i<=3; i++) {
+    // Panels 1-3 (step 4 = launch, no panel)
+    [1,2,3].forEach(s => {
+        const el = document.getElementById(`wizard-step-${s}`);
+        if (el) el.style.display = (s === n) ? 'block' : 'none';
+    });
+    // Step indicators (1-4)
+    for (let i=1; i<=4; i++) {
         const num   = document.getElementById(`wnum-${i}`);
         const label = document.getElementById(`wlabel-${i}`);
+        if (!num) continue;
         const state = i < n ? 'done' : i === n ? 'active' : 'pending';
         num.className   = 'wstep-num '   + state;
         label.className = 'wstep-label ' + state;
-        if (i < n && i<=2) { num.textContent = '✓'; }
-        else if (i <= 2)   { num.textContent = String(i); }
-        // dividers
+        if (i < n && i <= 3) num.textContent = '✓';
+        else if (i <= 3)     num.textContent = String(i);
         const div = document.getElementById(`wdiv-${i}`);
         if (div) div.className = 'wstep-divider' + (i < n ? ' done' : '');
     }
-    // Back button
     document.getElementById('wizard-back-btn').style.visibility = n > 1 ? 'visible' : 'hidden';
-    // Next button label
     const nextBtn = document.getElementById('wizard-next-btn');
-    if (n === 1) { nextBtn.textContent = 'Next: AI Setup →'; }
-    if (n === 2) { nextBtn.textContent = 'Launch App →'; }
+    if (n === 1) nextBtn.textContent = 'Next: Database →';
+    if (n === 2) nextBtn.textContent = 'Next: AI Setup →';
+    if (n === 3) nextBtn.textContent = 'Launch App →';
 }
 
 async function testWizardMysqlConn() {
@@ -917,7 +1079,14 @@ async function testWizardMysqlConn() {
 
 async function wizardNext() {
     if (_wizardStep === 1) {
-        // Validate & connect DB
+        // Step 1: Deployment type
+        if (!_deployModeSelected) { showToast('Choose a deployment mode first','error'); return; }
+        deployMode = _deployModeSelected;
+        localStorage.setItem('deployMode', deployMode);
+        setWizardStep(2);
+
+    } else if (_wizardStep === 2) {
+        // Step 2: Database
         if (!selectedMode) { showToast('Choose a database mode first','error'); return; }
         const nextBtn = document.getElementById('wizard-next-btn');
         nextBtn.disabled = true; nextBtn.textContent = 'Connecting...';
@@ -935,13 +1104,21 @@ async function wizardNext() {
         if (!ok) { nextBtn.textContent = 'Next: AI Setup →'; return; }
         dbConfig = cfg;
         localStorage.setItem(CONFIG_KEY, JSON.stringify(dbConfig));
-        setWizardStep(2);
-    } else if (_wizardStep === 2) {
-        // Save AI provider (skip = manual)
+        setWizardStep(3);
+
+    } else if (_wizardStep === 3) {
+        // Step 3: AI provider
         const provider = _selectedAIProvider || 'manual';
         localStorage.setItem(AI_PROVIDER_KEY, provider);
         const key = (document.getElementById('ai-setup-key')?.value||'').trim();
         if (key) localStorage.setItem(APIKEY_KEY, key);
+        // In web server mode: persist config server-side so all devices share it
+        if (deployMode === 'webserver') {
+            await apiCall('saveAppConfig', { config: {
+                complete: true, deployMode, dbConfig,
+                aiProvider: provider, aiApiKey: key
+            }});
+        }
         launchApp();
     }
 }
@@ -950,11 +1127,39 @@ function wizardBack() {
     if (_wizardStep > 1) setWizardStep(_wizardStep - 1);
 }
 
+function applyDeployMode() {
+    // Restore from localStorage if deployMode not set yet
+    if (!deployMode) deployMode = localStorage.getItem('deployMode') || 'portable';
+    const btn = document.getElementById('shutdown-btn');
+    if (btn) btn.style.display = deployMode === 'webserver' ? 'none' : '';
+}
+
+// ── THEME TOGGLE ──────────────────────────────────────────────
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    updateThemeButton(isLight);
+}
+
+function updateThemeButton(isLight) {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+}
+
+function applyTheme() {
+    const saved = localStorage.getItem('theme');
+    const isLight = saved === 'light';
+    document.body.classList.toggle('light-mode', isLight);
+    updateThemeButton(isLight);
+}
+
 function launchApp() {
     document.getElementById('setup-wizard').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    applyDeployMode();
+    applyTheme();
     updateDbBadge();
-    loadJobs(); loadResume();
+    loadJobs(); loadResume(); loadGlobalContacts();
 }
 
 function selectAIProvider(provider) {
@@ -1108,7 +1313,7 @@ function updateStats() {
     document.getElementById('stat-interviewing').textContent=s.interviewing;
     document.getElementById('stat-rejected').textContent=s.rejected;
     document.getElementById('stat-closed').textContent=s.closed;
-    document.getElementById('stat-contacts').textContent=tc;
+    document.getElementById('stat-contacts').textContent=tc + globalContacts.length;
 }
 
 function filterByStatus(status) {
@@ -1664,7 +1869,8 @@ function extractCompanyWebsite(){
 // ══════════════════════════════════════════
 function openAllContactsModal(){
     const all=[];
-    jobs.forEach(j=>{ safeJson(j.contacts,[]).forEach((c,i)=>all.push({...c,jobId:j.id,jobTitle:j.title,jobCompany:j.company})); });
+    jobs.forEach(j=>{ safeJson(j.contacts,[]).forEach((c,i)=>all.push({...c,jobId:j.id,jobTitle:j.title,jobCompany:j.company,isGlobal:false})); });
+    globalContacts.forEach((c,i)=>all.push({...c,jobId:null,jobTitle:null,jobCompany:c.company||'(no company)',isGlobal:true,globalIdx:i}));
     const body=document.getElementById('all-contacts-body');
     if(!all.length){ body.innerHTML=emptyState('👤','No Contacts Yet','Add contacts to job records'); }
     else {
@@ -1715,6 +1921,9 @@ function openConfigModal(){
     document.getElementById('api-test-result').textContent='';
     document.getElementById('config-conn-status').className='connection-status connected';
     document.getElementById('config-conn-text').textContent=`Connected (${mode==='mysql'?'MySQL':'Local JSON'})`;
+    // Reflect current deploy mode in buttons
+    const dm = deployMode || localStorage.getItem('deployMode') || 'portable';
+    setCfgDeployModeUI(dm);
     document.getElementById('config-modal').classList.add('active');
 }
 
@@ -1773,16 +1982,39 @@ async function saveCfgAndReload(){
     const r=await apiCall('checkConnection',{config:cfg});
     if(r.success){
         dbConfig=cfg; localStorage.setItem(CONFIG_KEY,JSON.stringify(dbConfig));
+        applyDeployMode();
+        if(deployMode==='webserver'){
+            await apiCall('saveAppConfig',{config:{complete:true,deployMode,dbConfig,aiProvider:provider,aiApiKey:key||getApiKey()}});
+        }
         updateDbBadge(); closeConfigModal(); loadJobs(); loadResume();
-        showToast('Database reconnected!','success');
+        showToast('Settings saved!','success');
     } else {
         const init=await apiCall('initDatabase',{config:cfg});
         if(init.success){
             dbConfig=cfg; localStorage.setItem(CONFIG_KEY,JSON.stringify(dbConfig));
+            applyDeployMode();
+            if(deployMode==='webserver'){
+                await apiCall('saveAppConfig',{config:{complete:true,deployMode,dbConfig,aiProvider:provider,aiApiKey:key||getApiKey()}});
+            }
             updateDbBadge(); closeConfigModal(); loadJobs(); loadResume();
             showToast('Database initialized and connected!','success');
         } else showToast('Connection failed: '+(r.error||'Unknown'),'error');
     }
+}
+
+function setCfgDeployMode(mode) {
+    deployMode = mode;
+    localStorage.setItem('deployMode', mode);
+    setCfgDeployModeUI(mode);
+    applyDeployMode();
+    showToast(mode==='webserver' ? 'Web Server mode — shutdown button hidden' : 'Portable mode — shutdown button shown', 'info');
+}
+
+function setCfgDeployModeUI(mode) {
+    const pb = document.getElementById('cfg-deploy-portable');
+    const wb = document.getElementById('cfg-deploy-webserver');
+    if(pb){ pb.style.background=mode==='portable'?'rgba(88,166,255,.15)':''; pb.style.borderColor=mode==='portable'?'var(--accent-blue)':'var(--border-color)'; }
+    if(wb){ wb.style.background=mode==='webserver'?'rgba(88,166,255,.15)':''; wb.style.borderColor=mode==='webserver'?'var(--accent-blue)':'var(--border-color)'; }
 }
 
 function clearApiKey(){
@@ -1995,7 +2227,9 @@ document.addEventListener('keydown',e=>{
     for(const id of priority){ const el=document.getElementById(id); if(el&&el.classList.contains('active')){el.classList.remove('active');break;} }
 });
 document.querySelectorAll('.modal-overlay').forEach(o=>{
-    o.addEventListener('click',e=>{ if(e.target!==o) return; if(o.id==='job-modal') return; o.classList.remove('active'); });
+    // Exclude modals where losing unsaved input would be frustrating
+    const noClickDismiss = ['job-modal','contact-modal','communication-modal','standalone-contact-modal'];
+    o.addEventListener('click',e=>{ if(e.target!==o) return; if(noClickDismiss.includes(o.id)) return; o.classList.remove('active'); });
 });
 
 // ══════════════════════════════════════════
@@ -2015,6 +2249,96 @@ function togglePw(inputId,btn){
 function pwIconInline(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`; }
 
 document.head.insertAdjacentHTML('beforeend',`<style>.job-detail-section{margin-bottom:1.5rem;}.job-detail-section h3{font-size:.875rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;}</style>`);
+// ══════════════════════════════════════════
+//  GLOBAL / STANDALONE CONTACTS
+// ══════════════════════════════════════════
+async function loadGlobalContacts() {
+    const r = await apiCall('getGlobalContacts', { config: dbConfig });
+    if (r.success && r.data) {
+        globalContacts = r.data;
+    } else {
+        // Fall back to localStorage if API doesn't support it yet
+        try { globalContacts = JSON.parse(localStorage.getItem(GLOBAL_CONTACTS_KEY) || '[]'); } catch(e){ globalContacts=[]; }
+    }
+    updateStats();
+}
+
+async function saveGlobalContactsToDB() {
+    const r = await apiCall('saveGlobalContacts', { config: dbConfig, contacts: globalContacts });
+    if (!r.success) {
+        // Fallback: persist locally
+        localStorage.setItem(GLOBAL_CONTACTS_KEY, JSON.stringify(globalContacts));
+    }
+}
+
+function openStandaloneContactModal() {
+    // Populate company dropdown from existing jobs
+    const select = document.getElementById('sc-company-select');
+    const companies = [...new Set(jobs.map(j => j.company).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">— select a company —</option>'
+        + companies.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
+        + '<option value="__other__">Other / Not listed</option>';
+
+    // Clear fields
+    document.getElementById('sc-company-text').value = '';
+    document.getElementById('sc-company-text').style.display = 'block';
+    ['sc-name','sc-title','sc-linkedin','sc-email','sc-phone','sc-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('sc-role').value = 'Recruiter';
+
+    document.getElementById('standalone-contact-modal').classList.add('active');
+}
+
+function onScCompanySelect() {
+    const val = document.getElementById('sc-company-select').value;
+    const txt = document.getElementById('sc-company-text');
+    if (val && val !== '__other__') {
+        txt.value = val;
+    } else if (val === '__other__') {
+        txt.value = '';
+        txt.focus();
+    }
+}
+
+function closeStandaloneContactModal() {
+    document.getElementById('standalone-contact-modal').classList.remove('active');
+}
+
+async function saveStandaloneContact() {
+    const name = document.getElementById('sc-name').value.trim();
+    if (!name) { showToast('Contact name is required', 'error'); return; }
+
+    const company = document.getElementById('sc-company-text').value.trim()
+                 || document.getElementById('sc-company-select').value
+                 || '';
+
+    const contact = {
+        name,
+        company,
+        title:    document.getElementById('sc-title').value.trim(),
+        role:     document.getElementById('sc-role').value,
+        linkedin: document.getElementById('sc-linkedin').value.trim(),
+        email:    document.getElementById('sc-email').value.trim(),
+        phone:    document.getElementById('sc-phone').value.trim(),
+        notes:    document.getElementById('sc-notes').value.trim(),
+        created_at: new Date().toISOString(),
+    };
+
+    globalContacts.push(contact);
+    await saveGlobalContactsToDB();
+    updateStats();
+    closeStandaloneContactModal();
+    showToast('Contact saved!', 'success');
+}
+
+async function deleteGlobalContact(idx) {
+    if (!confirm('Delete this contact?')) return;
+    globalContacts.splice(idx, 1);
+    await saveGlobalContactsToDB();
+    updateStats();
+    openAllContactsModal(); // refresh the view
+}
+
+
 </script>
 
 <?php
@@ -2024,4 +2348,5 @@ function pwIcon() {
 ?>
 </body>
 </html>
+
 

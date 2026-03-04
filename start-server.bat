@@ -3,7 +3,7 @@ title Job Application Tracker
 color 0A
 
 echo ============================================
-echo    Job Application Tracker v2.03
+echo    Job Application Tracker v2.09
 echo ============================================
 echo.
 
@@ -17,7 +17,7 @@ if exist "%SCRIPT_DIR%.shutdown_flag" del "%SCRIPT_DIR%.shutdown_flag" >nul 2>&1
 where php >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] PHP not found in PATH.
-    echo Please see WINDOWS_SETUP.md for install instructions.
+    echo Install PHP from https://windows.php.net/download/ and add it to your PATH.
     echo.
     pause
     exit /b 1
@@ -44,7 +44,7 @@ echo.
 :: Open browser after 2 second delay (non-blocking)
 start "" /b cmd /c "timeout /t 2 /nobreak >nul && start http://127.0.0.1:%PORT%"
 
-:: Start PHP server (this keeps the window open - that's fine)
+:: Start PHP server
 php -S 127.0.0.1:%PORT% -t "%SCRIPT_DIR%"
 
 :: Cleanup after shutdown
